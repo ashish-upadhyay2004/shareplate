@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/NotificationBell';
 import {
@@ -18,24 +18,22 @@ import {
   User, 
   LayoutDashboard,
   UtensilsCrossed,
-  HandHeart
 } from 'lucide-react';
 import { useState } from 'react';
 
 export const Header = () => {
-  const { currentUser, isAuthenticated, logout } = useApp();
+  const { isAuthenticated, profile, role, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
   const getDashboardLink = () => {
-    if (!currentUser) return '/';
-    switch (currentUser.role) {
+    switch (role) {
       case 'donor': return '/donor/dashboard';
       case 'ngo': return '/ngo/explore';
       case 'admin': return '/admin/dashboard';
@@ -44,14 +42,11 @@ export const Header = () => {
   };
 
   const getNavLinks = () => {
-    if (!currentUser) return [];
-    
-    switch (currentUser.role) {
+    switch (role) {
       case 'donor':
         return [
           { label: 'Dashboard', href: '/donor/dashboard' },
           { label: 'Create Listing', href: '/donor/create-listing' },
-          { label: 'History', href: '/donor/history' },
         ];
       case 'ngo':
         return [
@@ -61,8 +56,6 @@ export const Header = () => {
       case 'admin':
         return [
           { label: 'Dashboard', href: '/admin/dashboard' },
-          { label: 'Users', href: '/admin/users' },
-          { label: 'Listings', href: '/admin/listings' },
         ];
       default:
         return [];
@@ -105,9 +98,9 @@ export const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={currentUser?.avatar} alt={currentUser?.name} />
+                      <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.name} />
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {currentUser?.name?.charAt(0).toUpperCase()}
+                        {profile?.name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -115,9 +108,9 @@ export const Header = () => {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{currentUser?.name}</p>
+                      <p className="text-sm font-medium leading-none">{profile?.name}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {currentUser?.orgName}
+                        {profile?.org_name}
                       </p>
                     </div>
                   </DropdownMenuLabel>
@@ -125,10 +118,6 @@ export const Header = () => {
                   <DropdownMenuItem onClick={() => navigate(getDashboardLink())}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive">

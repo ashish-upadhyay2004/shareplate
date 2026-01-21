@@ -6,9 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { UserRole } from '@/types';
 import { 
   UtensilsCrossed, 
   Mail, 
@@ -21,6 +20,8 @@ import {
   Store,
   HandHeart
 } from 'lucide-react';
+
+type UserRole = 'donor' | 'ngo';
 
 const RegisterPage = () => {
   const [searchParams] = useSearchParams();
@@ -37,7 +38,7 @@ const RegisterPage = () => {
     address: '',
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { register } = useApp();
+  const { register } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,10 +58,25 @@ const RegisterPage = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast({
+        title: 'Password too short',
+        description: 'Password must be at least 6 characters.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
-    const success = await register(formData, formData.password);
+    const { error } = await register(formData.email, formData.password, {
+      name: formData.name,
+      role: formData.role,
+      orgName: formData.orgName,
+      contact: formData.contact,
+      address: formData.address,
+    });
     
-    if (success) {
+    if (!error) {
       toast({
         title: 'Registration successful!',
         description: 'Welcome to Share Plate. Your account is pending verification.',
@@ -69,7 +85,7 @@ const RegisterPage = () => {
     } else {
       toast({
         title: 'Registration failed',
-        description: 'Please try again.',
+        description: error,
         variant: 'destructive',
       });
     }

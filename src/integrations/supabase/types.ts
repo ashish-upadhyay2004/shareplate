@@ -14,16 +14,316 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          message: string
+          sender_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          message: string
+          sender_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          message?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "donation_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donation_listings: {
+        Row: {
+          address: string
+          allergens: string[] | null
+          created_at: string
+          donor_id: string
+          expiry_time: string
+          food_category: string
+          food_type: Database["public"]["Enums"]["food_type"]
+          hygiene_notes: string | null
+          id: string
+          location: string
+          packaging_type: string | null
+          photos: string[] | null
+          pickup_time_end: string
+          pickup_time_start: string
+          prepared_time: string
+          quantity: number
+          quantity_unit: string
+          status: Database["public"]["Enums"]["donation_status"]
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          allergens?: string[] | null
+          created_at?: string
+          donor_id: string
+          expiry_time: string
+          food_category: string
+          food_type?: Database["public"]["Enums"]["food_type"]
+          hygiene_notes?: string | null
+          id?: string
+          location: string
+          packaging_type?: string | null
+          photos?: string[] | null
+          pickup_time_end: string
+          pickup_time_start: string
+          prepared_time: string
+          quantity: number
+          quantity_unit?: string
+          status?: Database["public"]["Enums"]["donation_status"]
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          allergens?: string[] | null
+          created_at?: string
+          donor_id?: string
+          expiry_time?: string
+          food_category?: string
+          food_type?: Database["public"]["Enums"]["food_type"]
+          hygiene_notes?: string | null
+          id?: string
+          location?: string
+          packaging_type?: string | null
+          photos?: string[] | null
+          pickup_time_end?: string
+          pickup_time_start?: string
+          prepared_time?: string
+          quantity?: number
+          quantity_unit?: string
+          status?: Database["public"]["Enums"]["donation_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      donation_requests: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string
+          message: string | null
+          ngo_id: string
+          requested_pickup_time: string
+          status: Database["public"]["Enums"]["request_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id: string
+          message?: string | null
+          ngo_id: string
+          requested_pickup_time: string
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string
+          message?: string | null
+          ngo_id?: string
+          requested_pickup_time?: string
+          status?: Database["public"]["Enums"]["request_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_requests_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "donation_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          listing_id: string
+          stars: number
+          to_user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          listing_id: string
+          stars: number
+          to_user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          listing_id?: string
+          stars?: number
+          to_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "donation_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string | null
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "donation_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          contact: string | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          org_name: string | null
+          updated_at: string
+          user_id: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          contact?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          org_name?: string | null
+          updated_at?: string
+          user_id: string
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          contact?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          org_name?: string | null
+          updated_at?: string
+          user_id?: string
+          verification_status?: Database["public"]["Enums"]["verification_status"]
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "donor" | "ngo" | "admin"
+      donation_status:
+        | "posted"
+        | "requested"
+        | "confirmed"
+        | "completed"
+        | "expired"
+        | "cancelled"
+      food_type: "veg" | "non-veg" | "both"
+      request_status: "pending" | "accepted" | "rejected"
+      verification_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +450,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["donor", "ngo", "admin"],
+      donation_status: [
+        "posted",
+        "requested",
+        "confirmed",
+        "completed",
+        "expired",
+        "cancelled",
+      ],
+      food_type: ["veg", "non-veg", "both"],
+      request_status: ["pending", "accepted", "rejected"],
+      verification_status: ["pending", "approved", "rejected"],
+    },
   },
 } as const

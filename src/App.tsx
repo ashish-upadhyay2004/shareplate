@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AppProvider, useApp } from "@/context/AppContext";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
 
 // Pages
 import LandingPage from "./pages/LandingPage";
@@ -17,19 +17,28 @@ import NGOExplorePage from "./pages/ngo/NGOExplorePage";
 import NGOListingDetailPage from "./pages/ngo/NGOListingDetailPage";
 import NGORequestsPage from "./pages/ngo/NGORequestsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import ChatPage from "./pages/ChatPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) => {
-  const { isAuthenticated, currentUser } = useApp();
+  const { isAuthenticated, role, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   
-  if (allowedRoles && currentUser && !allowedRoles.includes(currentUser.role)) {
+  if (allowedRoles && role && !allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }
   
@@ -37,11 +46,19 @@ const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode;
 };
 
 const HomeRedirect = () => {
-  const { isAuthenticated, currentUser } = useApp();
+  const { isAuthenticated, role, isLoading } = useAuth();
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   if (!isAuthenticated) return <LandingPage />;
   
-  switch (currentUser?.role) {
+  switch (role) {
     case 'donor': return <Navigate to="/donor/dashboard" replace />;
     case 'ngo': return <Navigate to="/ngo/explore" replace />;
     case 'admin': return <Navigate to="/admin/dashboard" replace />;
@@ -55,6 +72,7 @@ const AppRoutes = () => (
     <Route path="/login" element={<LoginPage />} />
     <Route path="/register" element={<RegisterPage />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+    <Route path="/admin/login" element={<AdminLoginPage />} />
     
     {/* Donor Routes */}
     <Route path="/donor/dashboard" element={<ProtectedRoute allowedRoles={['donor']}><DonorDashboard /></ProtectedRoute>} />
@@ -79,7 +97,7 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AppProvider>
+    <AuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -87,7 +105,7 @@ const App = () => (
           <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
-    </AppProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
