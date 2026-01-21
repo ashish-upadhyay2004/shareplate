@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { UtensilsCrossed, Mail, Lock, ArrowRight } from 'lucide-react';
+import { UtensilsCrossed, Mail, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 
-const LoginPage = () => {
+const AdminLoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -25,10 +25,10 @@ const LoginPage = () => {
     
     if (!error) {
       toast({
-        title: 'Welcome back!',
+        title: 'Welcome, Admin!',
         description: 'You have successfully logged in.',
       });
-      navigate('/');
+      navigate('/admin/dashboard');
     } else {
       toast({
         title: 'Login failed',
@@ -46,18 +46,18 @@ const LoginPage = () => {
         <div className="w-full max-w-md space-y-6 animate-fade-in">
           {/* Logo */}
           <div className="text-center">
-            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-orange-400 shadow-glow mb-4">
-              <UtensilsCrossed className="h-7 w-7 text-primary-foreground" />
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-red-600 to-red-400 shadow-glow mb-4">
+              <ShieldCheck className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold">Welcome Back</h1>
-            <p className="text-muted-foreground mt-1">Sign in to continue to Share Plate</p>
+            <h1 className="text-2xl font-bold">Admin Portal</h1>
+            <p className="text-muted-foreground mt-1">Sign in to access admin dashboard</p>
           </div>
 
-          <Card className="glass-card">
+          <Card className="glass-card border-red-200">
             <CardHeader>
-              <CardTitle>Sign In</CardTitle>
+              <CardTitle>Admin Sign In</CardTitle>
               <CardDescription>
-                Enter your credentials to access your account
+                Enter your admin credentials
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -69,7 +69,7 @@ const LoginPage = () => {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="your@email.com"
+                      placeholder="admin@shareplate.jp"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
@@ -79,15 +79,7 @@ const LoginPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link 
-                      to="/forgot-password" 
-                      className="text-sm text-primary hover:underline"
-                    >
-                      Forgot password?
-                    </Link>
-                  </div>
+                  <Label htmlFor="password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -102,32 +94,24 @@ const LoginPage = () => {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? 'Signing in...' : 'Sign In'}
+                <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In as Admin'}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <div className="space-y-2 text-center">
-            <p className="text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary font-medium hover:underline">
-                Create account
-              </Link>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Admin?{' '}
-              <Link to="/admin/login" className="text-red-600 font-medium hover:underline">
-                Admin Login
-              </Link>
-            </p>
-          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            Not an admin?{' '}
+            <Link to="/login" className="text-primary font-medium hover:underline">
+              Regular login
+            </Link>
+          </p>
         </div>
       </div>
     </Layout>
   );
 };
 
-export default LoginPage;
+export default AdminLoginPage;
