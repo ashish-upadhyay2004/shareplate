@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -20,6 +21,7 @@ export interface ListingInfo {
   location: string;
   photos: string[];
   donor_id: string;
+  status?: string;
   donor_profile?: NgoProfile;
 }
 
@@ -84,7 +86,7 @@ export const useRequests = () => {
       // Get listings data
       const { data: listings } = await supabase
         .from('donation_listings')
-        .select('id, food_category, quantity, quantity_unit, location, photos, donor_id')
+        .select('id, food_category, quantity, quantity_unit, location, photos, donor_id, status')
         .in('id', listingIds);
 
       const listingMap = new Map(listings?.map(l => [l.id, l]) ?? []);
@@ -97,6 +99,49 @@ export const useRequests = () => {
     },
     enabled: !!user,
   });
+
+  // Real-time subscription for donation_requests changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`requests-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'donation_requests',
+        },
+        () => {
+          // Invalidate both request queries when any request changes
+          queryClient.invalidateQueries({ queryKey: ['requests-for-my-listings', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['my-requests', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['my-listings', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['listings'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'donation_listings',
+        },
+        () => {
+          // Invalidate when listings change (for status updates)
+          queryClient.invalidateQueries({ queryKey: ['requests-for-my-listings', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['my-requests', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['my-listings', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['listings'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   // Get my requests (as NGO)
   const myRequestsQuery = useQuery({
@@ -112,11 +157,11 @@ export const useRequests = () => {
 
       if (error) throw error;
 
-      // Get listings data
+      // Get listings data (include status for progress tracking)
       const listingIds = [...new Set(requests.map(r => r.listing_id))];
       const { data: listings } = await supabase
         .from('donation_listings')
-        .select('id, food_category, quantity, quantity_unit, location, photos, donor_id')
+        .select('id, food_category, quantity, quantity_unit, location, photos, donor_id, status')
         .in('id', listingIds);
 
       // Get donor profiles
