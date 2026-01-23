@@ -53,6 +53,8 @@ interface CreateListingData {
   photos?: string[];
   hygiene_notes?: string;
   allergens?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const useListings = () => {

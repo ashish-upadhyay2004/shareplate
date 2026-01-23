@@ -56,14 +56,26 @@ const NGORequestsPage = () => {
   }, [myRequests, getListingById]);
 
   const pendingRequests = myRequests.filter(r => r.status === 'pending');
-  const acceptedRequests = myRequests.filter(r => r.status === 'accepted');
+  // Show accepted requests where listing is not completed
+  const acceptedRequests = myRequests.filter(r => {
+    if (r.status !== 'accepted') return false;
+    const listing = listingsMap.get(r.listing_id);
+    return listing && listing.status !== 'completed';
+  });
+  // Show completed requests (where listing is completed)
+  const completedRequests = myRequests.filter(r => {
+    if (r.status !== 'accepted') return false;
+    const listing = listingsMap.get(r.listing_id);
+    return listing && listing.status === 'completed';
+  });
   const rejectedRequests = myRequests.filter(r => r.status === 'rejected');
 
   const getRequestsForTab = () => {
     switch (activeTab) {
       case 'pending': return pendingRequests;
       case 'confirmed': return acceptedRequests;
-      case 'completed': return rejectedRequests;
+      case 'completed': return completedRequests;
+      case 'declined': return rejectedRequests;
       default: return myRequests;
     }
   };
@@ -100,7 +112,7 @@ const NGORequestsPage = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="pending" className="gap-2">
               <Clock className="h-4 w-4" />
               Pending
@@ -116,6 +128,13 @@ const NGORequestsPage = () => {
               )}
             </TabsTrigger>
             <TabsTrigger value="completed" className="gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Completed
+              {completedRequests.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{completedRequests.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="declined" className="gap-2">
               <XCircle className="h-4 w-4" />
               Declined
             </TabsTrigger>
@@ -186,18 +205,18 @@ const NGORequestsPage = () => {
                               </div>
                             </div>
 
-                            {/* Timeline for accepted */}
+                            {/* Timeline for accepted - reflects listing status */}
                             {request.status === 'accepted' && (
                               <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 mb-4">
                                 <div className="flex gap-2 items-center flex-1">
                                   <div className="h-2 w-2 rounded-full bg-green-500" />
-                                  <span className="text-xs text-green-700">Confirmed</span>
-                                  <div className="h-px flex-1 bg-green-300" />
-                                  <div className="h-2 w-2 rounded-full bg-green-300" />
-                                  <span className="text-xs text-green-600">Pickup</span>
-                                  <div className="h-px flex-1 bg-green-300" />
-                                  <div className="h-2 w-2 rounded-full bg-green-300" />
-                                  <span className="text-xs text-green-600">Complete</span>
+                                  <span className="text-xs text-green-700 font-medium">Confirmed</span>
+                                  <div className={`h-px flex-1 ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
+                                  <div className={`h-2 w-2 rounded-full ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
+                                  <span className={`text-xs ${listing.status === 'completed' ? 'text-green-700 font-medium' : 'text-green-600'}`}>Picked Up</span>
+                                  <div className={`h-px flex-1 ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
+                                  <div className={`h-2 w-2 rounded-full ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
+                                  <span className={`text-xs ${listing.status === 'completed' ? 'text-green-700 font-medium' : 'text-green-600'}`}>Complete</span>
                                 </div>
                               </div>
                             )}

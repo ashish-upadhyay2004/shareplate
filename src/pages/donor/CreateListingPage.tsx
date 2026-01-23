@@ -23,7 +23,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Upload,
-  Loader2
+  Loader2,
+  Crosshair
 } from 'lucide-react';
 
 const CreateListingPage = () => {
@@ -47,10 +48,13 @@ const CreateListingPage = () => {
     address: profile?.address || '',
     hygieneNotes: '',
     allergens: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -66,6 +70,82 @@ const CreateListingPage = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const fetchCurrentLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: 'Geolocation not supported',
+        description: 'Your browser does not support geolocation.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        
+        setFormData(prev => ({
+          ...prev,
+          latitude,
+          longitude,
+        }));
+
+        // Reverse geocode to get address using OpenStreetMap Nominatim
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await response.json();
+          
+          if (data && data.address) {
+            const address = data.address;
+            const locationParts = [
+              address.neighbourhood || address.suburb || address.city_district,
+              address.city || address.town || address.village,
+            ].filter(Boolean);
+            
+            const fullAddress = data.display_name || '';
+            
+            setFormData(prev => ({
+              ...prev,
+              location: locationParts.join(', ') || 'Location detected',
+              address: fullAddress,
+            }));
+          }
+          
+          toast({
+            title: 'Location detected',
+            description: 'Your current location has been added.',
+          });
+        } catch (error) {
+          console.error('Reverse geocoding failed:', error);
+          toast({
+            title: 'Location coordinates saved',
+            description: 'Could not fetch address, but coordinates are saved.',
+          });
+        }
+        
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        toast({
+          title: 'Location access denied',
+          description: 'Please enable location access or enter address manually.',
+          variant: 'destructive',
+        });
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,6 +180,8 @@ const CreateListingPage = () => {
         photos: photoUrl ? [photoUrl] : [],
         hygiene_notes: formData.hygieneNotes || undefined,
         allergens: formData.allergens.split(',').map(a => a.trim()).filter(Boolean),
+        latitude: formData.latitude,
+        longitude: formData.longitude,
       });
 
       navigate('/donor/dashboard');
@@ -320,6 +402,36 @@ const CreateListingPage = () => {
                     onChange={handleChange}
                   />
                 </div>
+              </div>
+
+              {/* GPS Location Button */}
+              <div className="space-y-2">
+                <Label>Auto-detect Location</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={fetchCurrentLocation}
+                  disabled={isGettingLocation}
+                >
+                  {isGettingLocation ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Detecting location...
+                    </>
+                  ) : (
+                    <>
+                      <Crosshair className="h-4 w-4" />
+                      Use Current Location
+                    </>
+                  )}
+                </Button>
+                {formData.latitude && formData.longitude && (
+                  <p className="text-xs text-green-600 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Coordinates: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
