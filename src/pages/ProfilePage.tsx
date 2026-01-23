@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { NotificationSettings } from '@/components/NotificationSettings';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -137,6 +138,9 @@ const ProfilePage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Notification Settings */}
+          <NotificationSettings />
+
           {/* Avatar Section */}
           <Card className="glass-card">
             <CardHeader>

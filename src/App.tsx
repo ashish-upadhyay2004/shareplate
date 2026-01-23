@@ -16,6 +16,7 @@ import ListingDetailPage from "./pages/ListingDetailPage";
 import NGOExplorePage from "./pages/ngo/NGOExplorePage";
 import NGOListingDetailPage from "./pages/ngo/NGOListingDetailPage";
 import NGORequestsPage from "./pages/ngo/NGORequestsPage";
+import NGOMapPage from "./pages/ngo/NGOMapPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import ChatPage from "./pages/ChatPage";
@@ -83,6 +84,7 @@ const AppRoutes = () => (
     
     {/* NGO Routes */}
     <Route path="/ngo/explore" element={<ProtectedRoute allowedRoles={['ngo']}><NGOExplorePage /></ProtectedRoute>} />
+    <Route path="/ngo/map" element={<ProtectedRoute allowedRoles={['ngo']}><NGOMapPage /></ProtectedRoute>} />
     <Route path="/ngo/listing/:id" element={<ProtectedRoute allowedRoles={['ngo']}><NGOListingDetailPage /></ProtectedRoute>} />
     <Route path="/ngo/requests" element={<ProtectedRoute allowedRoles={['ngo']}><NGORequestsPage /></ProtectedRoute>} />
     

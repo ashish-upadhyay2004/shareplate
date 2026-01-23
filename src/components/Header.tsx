@@ -51,6 +51,7 @@ export const Header = () => {
       case 'ngo':
         return [
           { label: 'Explore', href: '/ngo/explore' },
+          { label: 'Map View', href: '/ngo/map' },
           { label: 'My Requests', href: '/ngo/requests' },
         ];
       case 'admin':
