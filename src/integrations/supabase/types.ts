@@ -57,7 +57,9 @@ export type Database = {
           food_type: Database["public"]["Enums"]["food_type"]
           hygiene_notes: string | null
           id: string
+          latitude: number | null
           location: string
+          longitude: number | null
           packaging_type: string | null
           photos: string[] | null
           pickup_time_end: string
@@ -78,7 +80,9 @@ export type Database = {
           food_type?: Database["public"]["Enums"]["food_type"]
           hygiene_notes?: string | null
           id?: string
+          latitude?: number | null
           location: string
+          longitude?: number | null
           packaging_type?: string | null
           photos?: string[] | null
           pickup_time_end: string
@@ -99,7 +103,9 @@ export type Database = {
           food_type?: Database["public"]["Enums"]["food_type"]
           hygiene_notes?: string | null
           id?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           packaging_type?: string | null
           photos?: string[] | null
           pickup_time_end?: string
@@ -271,6 +277,33 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verification_status?: Database["public"]["Enums"]["verification_status"]
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
         }
         Relationships: []
       }
