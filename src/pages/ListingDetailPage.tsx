@@ -35,7 +35,7 @@ const ListingDetailPage = () => {
   const { toast } = useToast();
   const { user, profile, role } = useAuth();
   const { getListingById, updateListingStatus } = useListings();
-  const { getRequestsForListing, updateRequestStatus } = useRequests();
+  const { getRequestsByListing, updateRequestStatus } = useRequests();
 
   const [listing, setListing] = useState<DonationListing | null>(null);
   const [requests, setRequests] = useState<DonationRequest[]>([]);
@@ -54,14 +54,14 @@ const ListingDetailPage = () => {
       setListing(listingData);
       
       if (listingData) {
-        const requestsData = await getRequestsForListing(id);
+        const requestsData = await getRequestsByListing(id);
         setRequests(requestsData);
       }
       
       setIsLoading(false);
     };
     fetchData();
-  }, [id, getListingById, getRequestsForListing]);
+  }, [id, getListingById, getRequestsByListing]);
 
   if (isLoading) {
     return (
@@ -91,8 +91,8 @@ const ListingDetailPage = () => {
 
   const handleAcceptRequest = async (requestId: string) => {
     try {
-      await updateRequestStatus({ requestId, status: 'accepted' });
-      const updatedRequests = await getRequestsForListing(listing.id);
+      await updateRequestStatus({ requestId, status: 'accepted', listingId: listing.id });
+      const updatedRequests = await getRequestsByListing(listing.id);
       setRequests(updatedRequests);
       toast({
         title: 'Request Accepted!',
@@ -109,8 +109,8 @@ const ListingDetailPage = () => {
 
   const handleRejectRequest = async (requestId: string) => {
     try {
-      await updateRequestStatus({ requestId, status: 'rejected' });
-      const updatedRequests = await getRequestsForListing(listing.id);
+      await updateRequestStatus({ requestId, status: 'rejected', listingId: listing.id });
+      const updatedRequests = await getRequestsByListing(listing.id);
       setRequests(updatedRequests);
       toast({
         title: 'Request Declined',

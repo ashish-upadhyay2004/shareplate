@@ -62,16 +62,26 @@ export const useAdmin = () => {
   const listingsQuery = useQuery({
     queryKey: ['admin-listings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: listings, error } = await supabase
         .from('donation_listings')
-        .select(`
-          *,
-          donor_profile:profiles!donation_listings_donor_id_fkey(name, org_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+
+      // Fetch donor profiles separately
+      const donorIds = [...new Set(listings.map(l => l.donor_id))];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, name, org_name')
+        .in('user_id', donorIds);
+
+      const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) ?? []);
+
+      return listings.map(listing => ({
+        ...listing,
+        donor_profile: profilesMap.get(listing.donor_id) || null,
+      }));
     },
     enabled: !!user && isAdmin,
   });

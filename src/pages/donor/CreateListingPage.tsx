@@ -29,7 +29,7 @@ import {
 const CreateListingPage = () => {
   const { profile } = useAuth();
   const { createListing, isCreating } = useListings();
-  const { uploadFile, isUploading } = useStorage();
+  const { uploadFoodPhoto, isUploading } = useStorage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -73,9 +73,9 @@ const CreateListingPage = () => {
 
     try {
       // Upload photo if selected
-      let photoUrl: string | undefined;
+      let photoUrl: string | null = null;
       if (photoFile) {
-        photoUrl = await uploadFile(photoFile);
+        photoUrl = await uploadFoodPhoto(photoFile);
       }
 
       // Parse dates
@@ -97,7 +97,7 @@ const CreateListingPage = () => {
         pickup_time_end: pickupTimeEnd,
         location: formData.location,
         address: formData.address,
-        photos: photoUrl ? [photoUrl] : undefined,
+        photos: photoUrl ? [photoUrl] : [],
         hygiene_notes: formData.hygieneNotes || undefined,
         allergens: formData.allergens.split(',').map(a => a.trim()).filter(Boolean),
       });
