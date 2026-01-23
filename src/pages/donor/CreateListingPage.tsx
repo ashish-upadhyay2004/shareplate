@@ -8,25 +8,28 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useListings, FoodType } from '@/hooks/useListings';
+import { useStorage } from '@/hooks/useStorage';
 import { useToast } from '@/hooks/use-toast';
-import { FoodType } from '@/types';
 import { 
   ArrowLeft, 
-  ArrowRight, 
   Leaf, 
   Drumstick, 
   UtensilsCrossed,
-  Package,
   Clock,
   MapPin,
   Camera,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Upload,
+  Loader2
 } from 'lucide-react';
 
 const CreateListingPage = () => {
-  const { currentUser, createListing } = useApp();
+  const { profile } = useAuth();
+  const { createListing, isCreating } = useListings();
+  const { uploadFile, isUploading } = useStorage();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -40,57 +43,73 @@ const CreateListingPage = () => {
     expiryTime: '',
     pickupTimeStart: '',
     pickupTimeEnd: '',
-    location: currentUser?.address?.split(',')[0] || '',
-    address: currentUser?.address || '',
+    location: profile?.address?.split(',')[0] || '',
+    address: profile?.address || '',
     hygieneNotes: '',
     allergens: '',
-    photoUrl: '',
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Parse dates
-    const now = new Date();
-    const preparedTime = formData.preparedTime ? new Date(formData.preparedTime) : new Date(now.getTime() - 2 * 60 * 60 * 1000);
-    const expiryTime = formData.expiryTime ? new Date(formData.expiryTime) : new Date(now.getTime() + 6 * 60 * 60 * 1000);
-    const pickupTimeStart = formData.pickupTimeStart ? new Date(formData.pickupTimeStart) : now;
-    const pickupTimeEnd = formData.pickupTimeEnd ? new Date(formData.pickupTimeEnd) : new Date(now.getTime() + 3 * 60 * 60 * 1000);
+    try {
+      // Upload photo if selected
+      let photoUrl: string | undefined;
+      if (photoFile) {
+        photoUrl = await uploadFile(photoFile);
+      }
 
-    createListing({
-      donorId: currentUser!.id,
-      donorName: currentUser!.name,
-      donorOrg: currentUser!.orgName,
-      foodType: formData.foodType,
-      foodCategory: formData.foodCategory,
-      quantity: parseInt(formData.quantity) || 0,
-      quantityUnit: formData.quantityUnit,
-      packagingType: formData.packagingType,
-      preparedTime,
-      expiryTime,
-      pickupTimeStart,
-      pickupTimeEnd,
-      location: formData.location,
-      address: formData.address,
-      photos: formData.photoUrl ? [formData.photoUrl] : ['https://images.unsplash.com/photo-1547592180-85f173990554?w=400&h=300&fit=crop'],
-      hygieneNotes: formData.hygieneNotes,
-      allergens: formData.allergens.split(',').map(a => a.trim()).filter(Boolean),
-    });
+      // Parse dates
+      const now = new Date();
+      const preparedTime = formData.preparedTime ? new Date(formData.preparedTime).toISOString() : new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
+      const expiryTime = formData.expiryTime ? new Date(formData.expiryTime).toISOString() : new Date(now.getTime() + 6 * 60 * 60 * 1000).toISOString();
+      const pickupTimeStart = formData.pickupTimeStart ? new Date(formData.pickupTimeStart).toISOString() : now.toISOString();
+      const pickupTimeEnd = formData.pickupTimeEnd ? new Date(formData.pickupTimeEnd).toISOString() : new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString();
 
-    toast({
-      title: 'Listing Created!',
-      description: 'Your donation is now visible to NGOs.',
-    });
+      await createListing({
+        food_type: formData.foodType,
+        food_category: formData.foodCategory,
+        quantity: parseInt(formData.quantity) || 0,
+        quantity_unit: formData.quantityUnit,
+        packaging_type: formData.packagingType || undefined,
+        prepared_time: preparedTime,
+        expiry_time: expiryTime,
+        pickup_time_start: pickupTimeStart,
+        pickup_time_end: pickupTimeEnd,
+        location: formData.location,
+        address: formData.address,
+        photos: photoUrl ? [photoUrl] : undefined,
+        hygiene_notes: formData.hygieneNotes || undefined,
+        allergens: formData.allergens.split(',').map(a => a.trim()).filter(Boolean),
+      });
 
-    setIsSubmitting(false);
-    navigate('/donor/dashboard');
+      navigate('/donor/dashboard');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create listing. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const foodTypeOptions = [
@@ -367,21 +386,43 @@ const CreateListingPage = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="photoUrl">Photo URL (optional)</Label>
-                <div className="relative">
-                  <Camera className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="photoUrl"
-                    name="photoUrl"
-                    placeholder="https://example.com/photo.jpg"
-                    value={formData.photoUrl}
-                    onChange={handleChange}
-                    className="pl-10"
-                  />
+                <Label>Photo</Label>
+                <div className="border-2 border-dashed rounded-lg p-6 text-center">
+                  {photoPreview ? (
+                    <div className="space-y-4">
+                      <img
+                        src={photoPreview}
+                        alt="Preview"
+                        className="mx-auto max-h-48 rounded-lg object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setPhotoFile(null);
+                          setPhotoPreview(null);
+                        }}
+                      >
+                        Remove Photo
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          Click to upload a photo
+                        </span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Leave empty for a default food image
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -399,10 +440,19 @@ const CreateListingPage = () => {
             <Button 
               type="submit" 
               className="flex-1"
-              disabled={isSubmitting}
+              disabled={isCreating || isUploading}
             >
-              {isSubmitting ? 'Creating...' : 'Create Listing'}
-              <CheckCircle2 className="h-4 w-4" />
+              {isCreating || isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  Create Listing
+                  <CheckCircle2 className="h-4 w-4" />
+                </>
+              )}
             </Button>
           </div>
         </form>

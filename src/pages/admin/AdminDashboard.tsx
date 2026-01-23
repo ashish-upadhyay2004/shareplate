@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useApp } from '@/context/AppContext';
-import { impactStats } from '@/data/mockData';
+import { useAdmin } from '@/hooks/useAdmin';
 import { format } from 'date-fns';
 import {
   BarChart,
@@ -33,20 +32,35 @@ import {
   Clock,
   ShieldCheck,
   AlertTriangle,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { users, listings, updateUser } = useApp();
+  const { 
+    profiles, 
+    listings, 
+    stats, 
+    isLoading, 
+    updateVerificationStatus 
+  } = useAdmin();
   const [activeTab, setActiveTab] = useState('overview');
 
-  const pendingUsers = users.filter(u => u.verificationStatus === 'pending');
-  const approvedUsers = users.filter(u => u.verificationStatus === 'approved');
-  const donors = users.filter(u => u.role === 'donor');
-  const ngos = users.filter(u => u.role === 'ngo');
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
-  const handleVerify = (userId: string, status: 'approved' | 'rejected') => {
-    updateUser(userId, { verificationStatus: status });
+  const pendingUsers = profiles.filter(u => u.verification_status === 'pending');
+  const approvedUsers = profiles.filter(u => u.verification_status === 'approved');
+
+  const handleVerify = async (userId: string, status: 'approved' | 'rejected') => {
+    await updateVerificationStatus({ userId, status });
   };
 
   // Chart data
@@ -66,8 +80,8 @@ const AdminDashboard = () => {
   ];
 
   const userDistribution = [
-    { name: 'Restaurants', value: donors.length, color: '#f97316' },
-    { name: 'NGOs', value: ngos.length, color: '#22c55e' },
+    { name: 'Restaurants', value: stats.totalDonors, color: '#f97316' },
+    { name: 'NGOs', value: stats.totalNGOs, color: '#22c55e' },
   ];
 
   return (
@@ -93,14 +107,14 @@ const AdminDashboard = () => {
               <StatCard 
                 icon={UtensilsCrossed} 
                 label="Total Donations" 
-                value={impactStats.donationsCompleted}
+                value={stats.totalListings}
                 trend={{ value: 18, isPositive: true }}
                 delay={0}
               />
               <StatCard 
                 icon={Heart} 
-                label="Meals Served" 
-                value={impactStats.mealsServed}
+                label="Completed" 
+                value={stats.completedListings}
                 trend={{ value: 23, isPositive: true }}
                 delay={100}
               />
@@ -113,9 +127,8 @@ const AdminDashboard = () => {
               />
               <StatCard 
                 icon={Leaf} 
-                label="Food Saved (tons)" 
-                value={impactStats.foodWastePrevented}
-                trend={{ value: 31, isPositive: true }}
+                label="Pending Requests" 
+                value={stats.pendingRequests}
                 delay={300}
               />
             </div>
@@ -233,13 +246,13 @@ const AdminDashboard = () => {
                     {pendingUsers.slice(0, 3).map((user) => (
                       <div key={user.id} className="flex items-center justify-between p-3 rounded-lg bg-amber-50">
                         <div>
-                          <p className="font-medium">{user.orgName}</p>
-                          <p className="text-sm text-muted-foreground">{user.name} • {user.role}</p>
+                          <p className="font-medium">{user.org_name || user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.name} • {user.email}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button 
                             size="sm" 
-                            onClick={() => handleVerify(user.id, 'approved')}
+                            onClick={() => handleVerify(user.user_id, 'approved')}
                           >
                             <CheckCircle2 className="h-4 w-4" />
                             Approve
@@ -247,7 +260,7 @@ const AdminDashboard = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => handleVerify(user.id, 'rejected')}
+                            onClick={() => handleVerify(user.user_id, 'rejected')}
                           >
                             <XCircle className="h-4 w-4" />
                             Reject
@@ -270,7 +283,7 @@ const AdminDashboard = () => {
                     <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold">{users.length}</p>
+                    <p className="text-2xl font-bold">{profiles.length}</p>
                     <p className="text-sm text-muted-foreground">Total Users</p>
                   </div>
                 </div>
@@ -310,17 +323,16 @@ const AdminDashboard = () => {
                       <tr className="border-b">
                         <th className="text-left p-3 text-sm font-medium text-muted-foreground">Organization</th>
                         <th className="text-left p-3 text-sm font-medium text-muted-foreground">Contact</th>
-                        <th className="text-left p-3 text-sm font-medium text-muted-foreground">Role</th>
                         <th className="text-left p-3 text-sm font-medium text-muted-foreground">Status</th>
                         <th className="text-left p-3 text-sm font-medium text-muted-foreground">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {users.filter(u => u.role !== 'admin').map((user) => (
+                      {profiles.map((user) => (
                         <tr key={user.id} className="border-b hover:bg-muted/50">
                           <td className="p-3">
                             <div>
-                              <p className="font-medium">{user.orgName}</p>
+                              <p className="font-medium">{user.org_name || user.name}</p>
                               <p className="text-sm text-muted-foreground">{user.name}</p>
                             </div>
                           </td>
@@ -329,32 +341,27 @@ const AdminDashboard = () => {
                             <p className="text-sm text-muted-foreground">{user.contact}</p>
                           </td>
                           <td className="p-3">
-                            <Badge variant={user.role === 'donor' ? 'default' : 'secondary'}>
-                              {user.role === 'donor' ? 'Restaurant' : 'NGO'}
-                            </Badge>
-                          </td>
-                          <td className="p-3">
                             <Badge variant={
-                              user.verificationStatus === 'approved' ? 'default' :
-                              user.verificationStatus === 'rejected' ? 'destructive' : 'secondary'
+                              user.verification_status === 'approved' ? 'default' :
+                              user.verification_status === 'rejected' ? 'destructive' : 'secondary'
                             }>
-                              {user.verificationStatus}
+                              {user.verification_status}
                             </Badge>
                           </td>
                           <td className="p-3">
-                            {user.verificationStatus === 'pending' && (
+                            {user.verification_status === 'pending' && (
                               <div className="flex gap-2">
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
-                                  onClick={() => handleVerify(user.id, 'approved')}
+                                  onClick={() => handleVerify(user.user_id, 'approved')}
                                 >
                                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                                 </Button>
                                 <Button 
                                   size="sm" 
                                   variant="ghost"
-                                  onClick={() => handleVerify(user.id, 'rejected')}
+                                  onClick={() => handleVerify(user.user_id, 'rejected')}
                                 >
                                   <XCircle className="h-4 w-4 text-red-600" />
                                 </Button>
@@ -394,20 +401,20 @@ const AdminDashboard = () => {
                           <td className="p-3">
                             <div className="flex items-center gap-3">
                               <img 
-                                src={listing.photos[0]} 
-                                alt={listing.foodCategory}
+                                src={listing.photos?.[0] || 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&h=300&fit=crop'} 
+                                alt={listing.food_category}
                                 className="h-10 w-10 rounded-lg object-cover"
                               />
-                              <span className="font-medium">{listing.foodCategory}</span>
+                              <span className="font-medium">{listing.food_category}</span>
                             </div>
                           </td>
-                          <td className="p-3 text-sm">{listing.donorOrg}</td>
-                          <td className="p-3 text-sm">{listing.quantity} {listing.quantityUnit}</td>
+                          <td className="p-3 text-sm">{listing.donor_profile?.org_name || 'Unknown'}</td>
+                          <td className="p-3 text-sm">{listing.quantity} {listing.quantity_unit}</td>
                           <td className="p-3">
                             <StatusBadge status={listing.status} />
                           </td>
                           <td className="p-3 text-sm text-muted-foreground">
-                            {format(new Date(listing.createdAt), 'MMM d, h:mm a')}
+                            {format(new Date(listing.created_at), 'MMM d, h:mm a')}
                           </td>
                         </tr>
                       ))}

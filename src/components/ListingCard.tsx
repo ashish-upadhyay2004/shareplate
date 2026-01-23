@@ -1,4 +1,4 @@
-import { DonationListing } from '@/types';
+import { DonationListing } from '@/hooks/useListings';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -39,8 +39,8 @@ export const ListingCard = ({
     }
   };
 
-  const timeUntilExpiry = formatDistanceToNow(new Date(listing.expiryTime), { addSuffix: true });
-  const pickupWindow = `${format(new Date(listing.pickupTimeStart), 'h:mm a')} - ${format(new Date(listing.pickupTimeEnd), 'h:mm a')}`;
+  const timeUntilExpiry = formatDistanceToNow(new Date(listing.expiry_time), { addSuffix: true });
+  const pickupWindow = `${format(new Date(listing.pickup_time_start), 'h:mm a')} - ${format(new Date(listing.pickup_time_end), 'h:mm a')}`;
 
   if (variant === 'compact') {
     return (
@@ -50,10 +50,10 @@ export const ListingCard = ({
       >
         <div className="flex items-center gap-4">
           <div className="h-16 w-16 rounded-xl overflow-hidden flex-shrink-0">
-            {listing.photos[0] ? (
+            {listing.photos?.[0] ? (
               <img 
                 src={listing.photos[0]} 
-                alt={listing.foodCategory}
+                alt={listing.food_category}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -64,11 +64,11 @@ export const ListingCard = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-medium truncate">{listing.foodCategory}</h3>
+              <h3 className="font-medium truncate">{listing.food_category}</h3>
               <StatusBadge status={listing.status} />
             </div>
             <p className="text-sm text-muted-foreground truncate">
-              {listing.donorOrg} • {listing.quantity} {listing.quantityUnit}
+              {listing.donor_profile?.org_name || 'Unknown Donor'} • {listing.quantity} {listing.quantity_unit}
             </p>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
@@ -81,10 +81,10 @@ export const ListingCard = ({
     <Card className="glass-card-hover overflow-hidden group">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
-        {listing.photos[0] ? (
+        {listing.photos?.[0] ? (
           <img 
             src={listing.photos[0]} 
-            alt={listing.foodCategory}
+            alt={listing.food_category}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -100,10 +100,10 @@ export const ListingCard = ({
             variant="secondary" 
             className="bg-background/80 backdrop-blur-sm"
           >
-            {listing.foodType === 'veg' && <Leaf className="h-3 w-3 mr-1 text-green-600" />}
-            {listing.foodType === 'non-veg' && <Drumstick className="h-3 w-3 mr-1 text-red-600" />}
-            {listing.foodType === 'both' && '🍽️ '}
-            {listing.foodType === 'veg' ? 'Vegetarian' : listing.foodType === 'non-veg' ? 'Non-Veg' : 'Mixed'}
+            {listing.food_type === 'veg' && <Leaf className="h-3 w-3 mr-1 text-green-600" />}
+            {listing.food_type === 'non-veg' && <Drumstick className="h-3 w-3 mr-1 text-red-600" />}
+            {listing.food_type === 'both' && '🍽️ '}
+            {listing.food_type === 'veg' ? 'Vegetarian' : listing.food_type === 'non-veg' ? 'Non-Veg' : 'Mixed'}
           </Badge>
         </div>
       </div>
@@ -111,14 +111,14 @@ export const ListingCard = ({
       {/* Content */}
       <div className="p-5 space-y-4">
         <div>
-          <h3 className="font-semibold text-lg mb-1">{listing.foodCategory}</h3>
-          <p className="text-sm text-muted-foreground">{listing.donorOrg}</p>
+          <h3 className="font-semibold text-lg mb-1">{listing.food_category}</h3>
+          <p className="text-sm text-muted-foreground">{listing.donor_profile?.org_name || 'Unknown Donor'}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Users className="h-4 w-4" />
-            <span>{listing.quantity} {listing.quantityUnit}</span>
+            <span>{listing.quantity} {listing.quantity_unit}</span>
           </div>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-4 w-4" />

@@ -6,17 +6,25 @@ import { ListingCard } from '@/components/ListingCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useApp } from '@/context/AppContext';
-import { Plus, Package, Clock, CheckCircle2, UtensilsCrossed, History } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useListings } from '@/hooks/useListings';
+import { Plus, Package, Clock, CheckCircle2, UtensilsCrossed, History, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { FeedbackDialog } from '@/components/FeedbackDialog';
 
 const DonorDashboard = () => {
-  const { currentUser, listings } = useApp();
+  const { user, profile } = useAuth();
+  const { myListings, isMyListingsLoading } = useListings();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('active');
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [selectedListingForFeedback, setSelectedListingForFeedback] = useState<{
+    listingId: string;
+    toUserId: string;
+    toUserName: string;
+  } | null>(null);
 
-  const myListings = listings.filter(l => l.donorId === currentUser?.id);
   const activeListings = myListings.filter(l => ['posted', 'requested', 'confirmed'].includes(l.status));
   const completedListings = myListings.filter(l => l.status === 'completed');
   const expiredListings = myListings.filter(l => l.status === 'expired' || l.status === 'cancelled');
@@ -25,13 +33,23 @@ const DonorDashboard = () => {
     .filter(l => l.status === 'completed')
     .reduce((sum, l) => sum + l.quantity, 0);
 
+  if (isMyListingsLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Welcome back, {currentUser?.name?.split(' ')[0]}!</h1>
-            <p className="text-muted-foreground">{currentUser?.orgName}</p>
+            <h1 className="text-3xl font-bold">Welcome back, {profile?.name?.split(' ')[0]}!</h1>
+            <p className="text-muted-foreground">{profile?.org_name}</p>
           </div>
           <Button onClick={() => navigate('/donor/create-listing')}>
             <Plus className="h-4 w-4" />
@@ -130,19 +148,19 @@ const DonorDashboard = () => {
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <img 
-                              src={listing.photos[0]} 
-                              alt={listing.foodCategory}
+                              src={listing.photos?.[0] || 'https://images.unsplash.com/photo-1547592180-85f173990554?w=400&h=300&fit=crop'} 
+                              alt={listing.food_category}
                               className="h-10 w-10 rounded-lg object-cover"
                             />
-                            <span className="font-medium">{listing.foodCategory}</span>
+                            <span className="font-medium">{listing.food_category}</span>
                           </div>
                         </td>
-                        <td className="p-4 text-sm">{listing.quantity} {listing.quantityUnit}</td>
+                        <td className="p-4 text-sm">{listing.quantity} {listing.quantity_unit}</td>
                         <td className="p-4">
                           <StatusBadge status={listing.status} />
                         </td>
                         <td className="p-4 text-sm text-muted-foreground">
-                          {format(new Date(listing.createdAt), 'MMM d, yyyy')}
+                          {format(new Date(listing.created_at), 'MMM d, yyyy')}
                         </td>
                       </tr>
                     ))}
@@ -153,6 +171,16 @@ const DonorDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedListingForFeedback && (
+        <FeedbackDialog
+          open={feedbackDialogOpen}
+          onOpenChange={setFeedbackDialogOpen}
+          listingId={selectedListingForFeedback.listingId}
+          toUserId={selectedListingForFeedback.toUserId}
+          toUserName={selectedListingForFeedback.toUserName}
+        />
+      )}
     </Layout>
   );
 };
