@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { ListingCard } from '@/components/ListingCard';
-import { useApp } from '@/context/AppContext';
+import { useListings } from '@/hooks/useListings';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Search, Filter, Leaf, Drumstick, MapPin, Package } from 'lucide-react';
+import { Search, Leaf, Drumstick, Package, Loader2 } from 'lucide-react';
 
 const NGOExplorePage = () => {
-  const { listings } = useApp();
+  const { listings, isLoading } = useListings();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [foodTypeFilter, setFoodTypeFilter] = useState<string | null>(null);
@@ -18,11 +17,21 @@ const NGOExplorePage = () => {
   const availableListings = listings.filter(l => l.status === 'posted');
   
   const filteredListings = availableListings.filter(listing => {
-    const matchesSearch = listing.foodCategory.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch = listing.food_category.toLowerCase().includes(search.toLowerCase()) ||
                           listing.location.toLowerCase().includes(search.toLowerCase());
-    const matchesFoodType = !foodTypeFilter || listing.foodType === foodTypeFilter;
+    const matchesFoodType = !foodTypeFilter || listing.food_type === foodTypeFilter;
     return matchesSearch && matchesFoodType;
   });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>

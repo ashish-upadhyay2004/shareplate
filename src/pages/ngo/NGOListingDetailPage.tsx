@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,9 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useListings, DonationListing } from '@/hooks/useListings';
+import { useRequests } from '@/hooks/useRequests';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { 
@@ -20,21 +22,44 @@ import {
   Drumstick,
   Package,
   Send,
-  AlertTriangle
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 
 const NGOListingDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentUser, getListingById, createRequest, getRequestsByListing } = useApp();
+  const { user, profile } = useAuth();
+  const { getListingById } = useListings();
+  const { createRequest, isCreating, myRequests } = useRequests();
 
-  const listing = getListingById(id || '');
-  const existingRequest = getRequestsByListing(id || '').find(r => r.ngoId === currentUser?.id);
-
+  const [listing, setListing] = useState<DonationListing | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [pickupTime, setPickupTime] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!id) return;
+      const data = await getListingById(id);
+      setListing(data);
+      setIsLoading(false);
+    };
+    fetchListing();
+  }, [id, getListingById]);
+
+  const existingRequest = myRequests.find(r => r.listing_id === id);
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 flex justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
 
   if (!listing) {
     return (
@@ -48,26 +73,38 @@ const NGOListingDetailPage = () => {
     );
   }
 
-  const handleSubmitRequest = (e: React.FormEvent) => {
+  const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    createRequest({
-      listingId: listing.id,
-      ngoId: currentUser!.id,
-      ngoName: currentUser!.name,
-      ngoOrg: currentUser!.orgName,
-      message,
-      requestedPickupTime: pickupTime ? new Date(pickupTime) : new Date(),
-    });
+    if (!user || !profile) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to make a request.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-    toast({
-      title: 'Request Sent!',
-      description: 'The restaurant will be notified of your request.',
-    });
+    try {
+      await createRequest({
+        listing_id: listing.id,
+        message,
+        requested_pickup_time: pickupTime ? new Date(pickupTime).toISOString() : new Date().toISOString(),
+      });
 
-    setIsSubmitting(false);
-    navigate('/ngo/requests');
+      toast({
+        title: 'Request Sent!',
+        description: 'The restaurant will be notified of your request.',
+      });
+
+      navigate('/ngo/requests');
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to submit request. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -88,8 +125,8 @@ const NGOListingDetailPage = () => {
             {/* Image & Status */}
             <div className="relative rounded-2xl overflow-hidden">
               <img 
-                src={listing.photos[0] || 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800'} 
-                alt={listing.foodCategory}
+                src={listing.photos?.[0] || 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800'} 
+                alt={listing.food_category}
                 className="w-full h-64 md:h-80 object-cover"
               />
               <div className="absolute top-4 left-4">
@@ -97,9 +134,9 @@ const NGOListingDetailPage = () => {
               </div>
               <div className="absolute top-4 right-4">
                 <Badge className="bg-background/80 backdrop-blur-sm text-foreground">
-                  {listing.foodType === 'veg' && <Leaf className="h-3 w-3 mr-1 text-green-600" />}
-                  {listing.foodType === 'non-veg' && <Drumstick className="h-3 w-3 mr-1 text-red-600" />}
-                  {listing.foodType === 'veg' ? 'Vegetarian' : listing.foodType === 'non-veg' ? 'Non-Veg' : 'Mixed'}
+                  {listing.food_type === 'veg' && <Leaf className="h-3 w-3 mr-1 text-green-600" />}
+                  {listing.food_type === 'non-veg' && <Drumstick className="h-3 w-3 mr-1 text-red-600" />}
+                  {listing.food_type === 'veg' ? 'Vegetarian' : listing.food_type === 'non-veg' ? 'Non-Veg' : 'Mixed'}
                 </Badge>
               </div>
             </div>
@@ -107,8 +144,8 @@ const NGOListingDetailPage = () => {
             {/* Details */}
             <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="text-2xl">{listing.foodCategory}</CardTitle>
-                <p className="text-muted-foreground">{listing.donorOrg}</p>
+                <CardTitle className="text-2xl">{listing.food_category}</CardTitle>
+                <p className="text-muted-foreground">{listing.donor_profile?.org_name || 'Unknown Donor'}</p>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -116,14 +153,14 @@ const NGOListingDetailPage = () => {
                     <Users className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Quantity</p>
-                      <p className="font-medium">{listing.quantity} {listing.quantityUnit}</p>
+                      <p className="font-medium">{listing.quantity} {listing.quantity_unit}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                     <Package className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm text-muted-foreground">Packaging</p>
-                      <p className="font-medium">{listing.packagingType}</p>
+                      <p className="font-medium">{listing.packaging_type || 'Not specified'}</p>
                     </div>
                   </div>
                 </div>
@@ -134,7 +171,7 @@ const NGOListingDetailPage = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">Pickup Window</p>
                       <p className="font-medium">
-                        {format(new Date(listing.pickupTimeStart), 'MMM d, h:mm a')} - {format(new Date(listing.pickupTimeEnd), 'h:mm a')}
+                        {format(new Date(listing.pickup_time_start), 'MMM d, h:mm a')} - {format(new Date(listing.pickup_time_end), 'h:mm a')}
                       </p>
                     </div>
                   </div>
@@ -148,14 +185,14 @@ const NGOListingDetailPage = () => {
                   </div>
                 </div>
 
-                {listing.hygieneNotes && (
+                {listing.hygiene_notes && (
                   <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
                     <div className="flex items-center gap-2 mb-2">
                       <AlertTriangle className="h-4 w-4 text-amber-600" />
                       <span className="font-medium text-amber-800">Hygiene Notes</span>
                     </div>
-                    <p className="text-sm text-amber-700">{listing.hygieneNotes}</p>
-                    {listing.allergens.length > 0 && (
+                    <p className="text-sm text-amber-700">{listing.hygiene_notes}</p>
+                    {listing.allergens && listing.allergens.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1">
                         {listing.allergens.map((allergen) => (
                           <Badge key={allergen} variant="outline" className="text-xs border-amber-300 text-amber-700">
@@ -221,9 +258,18 @@ const NGOListingDetailPage = () => {
                       />
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? 'Sending...' : 'Send Request'}
-                      <Send className="h-4 w-4" />
+                    <Button type="submit" className="w-full" disabled={isCreating}>
+                      {isCreating ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          Send Request
+                          <Send className="h-4 w-4" />
+                        </>
+                      )}
                     </Button>
                   </form>
                 )}
