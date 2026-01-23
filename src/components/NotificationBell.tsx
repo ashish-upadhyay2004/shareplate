@@ -1,4 +1,5 @@
-import { useApp } from '@/context/AppContext';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,12 +14,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 export const NotificationBell = () => {
-  const { notifications, currentUser, markNotificationRead, unreadCount } = useApp();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { role } = useAuth();
   const navigate = useNavigate();
 
-  const userNotifications = notifications
-    .filter(n => n.userId === currentUser?.id)
-    .slice(0, 5);
+  const displayNotifications = notifications.slice(0, 5);
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -35,12 +35,12 @@ export const NotificationBell = () => {
     }
   };
 
-  const handleNotificationClick = (notification: typeof userNotifications[0]) => {
-    markNotificationRead(notification.id);
-    if (notification.listingId) {
-      const path = currentUser?.role === 'donor' 
-        ? `/donor/listing/${notification.listingId}`
-        : `/ngo/listing/${notification.listingId}`;
+  const handleNotificationClick = async (notification: typeof displayNotifications[0]) => {
+    await markAsRead(notification.id);
+    if (notification.listing_id) {
+      const path = role === 'donor' 
+        ? `/donor/listing/${notification.listing_id}`
+        : `/ngo/listing/${notification.listing_id}`;
       navigate(path);
     }
   };
@@ -61,18 +61,23 @@ export const NotificationBell = () => {
         <DropdownMenuLabel className="flex items-center justify-between">
           Notifications
           {unreadCount > 0 && (
-            <span className="text-xs text-muted-foreground font-normal">
-              {unreadCount} unread
-            </span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs h-auto py-1"
+              onClick={() => markAllAsRead()}
+            >
+              Mark all read
+            </Button>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {userNotifications.length === 0 ? (
+        {displayNotifications.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             No notifications yet
           </div>
         ) : (
-          userNotifications.map((notification) => (
+          displayNotifications.map((notification) => (
             <DropdownMenuItem
               key={notification.id}
               onClick={() => handleNotificationClick(notification)}
@@ -89,7 +94,7 @@ export const NotificationBell = () => {
                   {notification.message}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                 </p>
               </div>
               {!notification.read && (
@@ -98,7 +103,7 @@ export const NotificationBell = () => {
             </DropdownMenuItem>
           ))
         )}
-        {userNotifications.length > 0 && (
+        {displayNotifications.length > 0 && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-center text-sm text-primary cursor-pointer">

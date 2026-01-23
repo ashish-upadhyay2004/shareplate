@@ -19,6 +19,7 @@ import NGORequestsPage from "./pages/ngo/NGORequestsPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import ChatPage from "./pages/ChatPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -90,6 +91,7 @@ const AppRoutes = () => (
     
     {/* Shared Routes */}
     <Route path="/chat/:listingId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+    <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
     
     <Route path="*" element={<NotFound />} />
   </Routes>

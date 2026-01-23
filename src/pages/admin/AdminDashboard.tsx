@@ -42,7 +42,7 @@ const AdminDashboard = () => {
     listings, 
     stats, 
     isLoading, 
-    updateVerificationStatus 
+    updateVerification 
   } = useAdmin();
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -60,7 +60,7 @@ const AdminDashboard = () => {
   const approvedUsers = profiles.filter(u => u.verification_status === 'approved');
 
   const handleVerify = async (userId: string, status: 'approved' | 'rejected') => {
-    await updateVerificationStatus({ userId, status });
+    await updateVerification({ userId, status });
   };
 
   // Chart data
@@ -81,7 +81,7 @@ const AdminDashboard = () => {
 
   const userDistribution = [
     { name: 'Restaurants', value: stats.totalDonors, color: '#f97316' },
-    { name: 'NGOs', value: stats.totalNGOs, color: '#22c55e' },
+    { name: 'NGOs', value: stats.totalNgos, color: '#22c55e' },
   ];
 
   return (
@@ -114,7 +114,7 @@ const AdminDashboard = () => {
               <StatCard 
                 icon={Heart} 
                 label="Completed" 
-                value={stats.completedListings}
+                value={listings.filter(l => l.status === 'completed').length}
                 trend={{ value: 23, isPositive: true }}
                 delay={100}
               />
@@ -128,7 +128,7 @@ const AdminDashboard = () => {
               <StatCard 
                 icon={Leaf} 
                 label="Pending Requests" 
-                value={stats.pendingRequests}
+                value={listings.filter(l => l.status === 'requested').length}
                 delay={300}
               />
             </div>
