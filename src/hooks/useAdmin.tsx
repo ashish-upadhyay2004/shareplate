@@ -156,6 +156,16 @@ export const useAdmin = () => {
   const donors = profiles.filter(p => p.role === 'donor');
   const ngos = profiles.filter(p => p.role === 'ngo');
 
+  const defaultStats: AdminStats = {
+    totalUsers: profiles.length,
+    totalDonors: profiles.filter(p => p.role === 'donor').length,
+    totalNgos: profiles.filter(p => p.role === 'ngo').length,
+    pendingVerifications: profiles.filter(p => p.verification_status === 'pending').length,
+    totalListings: listingsQuery.data?.length ?? 0,
+    completedDonations: listingsQuery.data?.filter(l => l.status === 'completed').length ?? 0,
+    activeListings: listingsQuery.data?.filter(l => ['posted', 'requested', 'confirmed'].includes(l.status)).length ?? 0,
+  };
+
   return {
     profiles,
     pendingUsers,
@@ -163,7 +173,7 @@ export const useAdmin = () => {
     donors,
     ngos,
     listings: listingsQuery.data ?? [],
-    stats: statsQuery.data,
+    stats: statsQuery.data ?? defaultStats,
     isLoading: profilesQuery.isLoading || listingsQuery.isLoading,
     updateVerification: updateVerificationMutation.mutateAsync,
     deleteListing: deleteListingMutation.mutateAsync,
