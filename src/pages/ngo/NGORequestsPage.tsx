@@ -9,6 +9,7 @@ import { useRequests } from '@/hooks/useRequests';
 import { useListings, DonationListing } from '@/hooks/useListings';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
 import { ComplaintDialog } from '@/components/ComplaintDialog';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { 
   Clock, 
@@ -21,17 +22,20 @@ import {
   Inbox,
   Loader2,
   Star,
-  AlertTriangle
+  AlertTriangle,
+  Truck
 } from 'lucide-react';
 
 const NGORequestsPage = () => {
   const { myRequests, isLoading: isLoadingRequests } = useRequests();
-  const { getListingById, isLoading: isLoadingListings } = useListings();
+  const { getListingById, updateListingStatus, isLoading: isLoadingListings } = useListings();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('pending');
   const [listingsMap, setListingsMap] = useState<Map<string, DonationListing>>(new Map());
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [complaintDialogOpen, setComplaintDialogOpen] = useState(false);
+  const [isMarkingPickup, setIsMarkingPickup] = useState<string | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<{
     listingId: string;
     toUserId: string;
@@ -123,6 +127,35 @@ const NGORequestsPage = () => {
     setComplaintDialogOpen(true);
   };
 
+  const handleMarkPickedUp = async (listing: DonationListing) => {
+    setIsMarkingPickup(listing.id);
+    try {
+      await updateListingStatus({ listingId: listing.id, status: 'picked_up' });
+      // Update local state
+      setListingsMap(prev => {
+        const newMap = new Map(prev);
+        const existingListing = newMap.get(listing.id);
+        if (existingListing) {
+          newMap.set(listing.id, { ...existingListing, status: 'picked_up' });
+        }
+        return newMap;
+      });
+      toast({
+        title: 'Pickup Confirmed!',
+        description: 'The donor will be notified. They will mark it as completed after handoff.',
+      });
+    } catch (error) {
+      console.error('Error marking as picked up:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update status. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsMarkingPickup(null);
+    }
+  };
+
   // Status timeline component - only shown for accepted requests
   const StatusTimeline = ({ listing }: { listing: DonationListing }) => {
     const isPickedUp = listing.status === 'picked_up' || listing.status === 'completed';
@@ -145,7 +178,7 @@ const NGORequestsPage = () => {
             {isPickedUp && <CheckCircle2 className="h-2 w-2 text-white" />}
           </div>
           <span className={`text-xs ${isPickedUp ? 'text-green-700 font-medium' : 'text-green-600'}`}>
-            Picked Up
+            Picked Up {isPickedUp && '(by NGO)'}
           </span>
           
           {/* Line to Complete */}
@@ -156,7 +189,7 @@ const NGORequestsPage = () => {
             {isCompleted && <CheckCircle2 className="h-2 w-2 text-white" />}
           </div>
           <span className={`text-xs ${isCompleted ? 'text-green-700 font-medium' : 'text-green-600'}`}>
-            Complete
+            Complete {isCompleted && '(by Donor)'}
           </span>
         </div>
       </div>
@@ -246,7 +279,10 @@ const NGORequestsPage = () => {
                                 request.status === 'rejected' ? 'destructive' : 'secondary'
                               }>
                                 {request.status === 'pending' ? 'Awaiting Response' :
-                                 request.status === 'accepted' ? (listing.status === 'completed' ? 'Completed' : 'Confirmed') : 'Declined'}
+                                 request.status === 'accepted' ? (
+                                   listing.status === 'completed' ? 'Completed' : 
+                                   listing.status === 'picked_up' ? 'Picked Up' : 'Confirmed'
+                                 ) : 'Declined'}
                               </Badge>
                             </div>
 
@@ -270,7 +306,7 @@ const NGORequestsPage = () => {
                               <StatusTimeline listing={listing} />
                             )}
 
-                            {/* Contact info for accepted */}
+                            {/* Contact info and actions for accepted */}
                             {request.status === 'accepted' && listing.donor_profile && (
                               <div className="flex flex-wrap gap-3">
                                 {listing.donor_profile.contact && (
@@ -287,6 +323,32 @@ const NGORequestsPage = () => {
                                   <MessageSquare className="h-4 w-4" />
                                   Open Chat
                                 </Button>
+                                
+                                {/* NGO can mark as picked up when status is confirmed */}
+                                {listing.status === 'confirmed' && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleMarkPickedUp(listing)}
+                                    disabled={isMarkingPickup === listing.id}
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                  >
+                                    {isMarkingPickup === listing.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Truck className="h-4 w-4" />
+                                    )}
+                                    Mark as Picked Up
+                                  </Button>
+                                )}
+                                
+                                {/* Show waiting message when picked up but not completed */}
+                                {listing.status === 'picked_up' && (
+                                  <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md">
+                                    <Clock className="h-4 w-4" />
+                                    Waiting for donor to confirm completion
+                                  </div>
+                                )}
+                                
                                 {listing.status === 'completed' && (
                                   <>
                                     <Button
