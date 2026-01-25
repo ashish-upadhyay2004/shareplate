@@ -383,6 +383,21 @@ const ListingDetailPage = () => {
                             </Button>
                           </div>
                         )}
+
+                        {/* Reconsideration flow - allow accepting previously rejected requests */}
+                        {request.status === 'rejected' && listing.status !== 'confirmed' && listing.status !== 'completed' && (
+                          <div className="mt-3 pt-3 border-t">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                              onClick={() => handleAcceptRequest(request.id)}
+                            >
+                              <CheckCircle2 className="h-3 w-3" />
+                              Reconsider & Accept
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ))
                   )}

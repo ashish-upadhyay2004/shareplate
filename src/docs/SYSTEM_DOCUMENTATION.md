@@ -105,11 +105,18 @@ Share Plate is a food rescue platform connecting restaurants (donors) with NGOs 
 - Star rating (1-5) with optional comments
 - Available after donation completion
 - Two-way: Donor rates NGO, NGO rates Donor
+- **Feedback History**: Visible on Profile page with tabs for received/given
+- Average rating displayed with total review count
 
 ### Complaint System
 - Report issues: inappropriate behavior, food quality, no-show, communication, safety, other
 - Admin review and resolution workflow
 - Status tracking: pending, reviewing, resolved, dismissed
+
+### Request Reconsideration
+- Donors can reconsider and accept previously rejected requests
+- "Reconsider & Accept" button available on rejected requests
+- Only available when listing is not yet confirmed/completed
 
 ---
 
@@ -119,11 +126,13 @@ Share Plate is a food rescue platform connecting restaurants (donors) with NGOs 
 1. **Register** → Create account with organization details
 2. **Wait for Approval** → Admin verifies account
 3. **Create Listing** → Add food details, auto-fetch location
-4. **Receive Requests** → View NGO pickup requests
-5. **Accept Request** → Confirm pickup, share contact details
-6. **Coordinate** → Chat with NGO for pickup logistics
-7. **Mark Complete** → Confirm successful handover
-8. **Give Feedback** → Rate the NGO
+4. **View Dashboard** → See pending request count and list in real-time
+5. **Receive Requests** → View NGO pickup requests with real-time updates
+6. **Accept/Reject Request** → Confirm pickup or decline
+7. **Reconsider** → Can re-accept previously rejected requests if needed
+8. **Coordinate** → Chat with NGO for pickup logistics
+9. **Mark Complete** → Confirm successful handover
+10. **Give Feedback** → Rate the NGO (visible on profile)
 
 ### NGO Workflow
 1. **Register** → Create account with organization details
