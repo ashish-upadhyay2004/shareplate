@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { NotificationSettings } from '@/components/NotificationSettings';
+import { FeedbackHistory } from '@/components/FeedbackHistory';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -138,6 +139,9 @@ const ProfilePage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Feedback History */}
+          <FeedbackHistory />
+
           {/* Notification Settings */}
           <NotificationSettings />
 

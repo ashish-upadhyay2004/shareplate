@@ -6,8 +6,10 @@ import { ListingCard } from '@/components/ListingCard';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PendingRequestsCard } from '@/components/PendingRequestsCard';
 import { useAuth } from '@/hooks/useAuth';
 import { useListings } from '@/hooks/useListings';
+import { useRequests } from '@/hooks/useRequests';
 import { Plus, Package, Clock, CheckCircle2, UtensilsCrossed, History, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
@@ -16,6 +18,7 @@ import { FeedbackDialog } from '@/components/FeedbackDialog';
 const DonorDashboard = () => {
   const { user, profile } = useAuth();
   const { myListings, isMyListingsLoading } = useListings();
+  const { requestsForMyListings, isLoading: isRequestsLoading } = useRequests();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('active');
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
@@ -28,7 +31,11 @@ const DonorDashboard = () => {
   const activeListings = myListings.filter(l => ['posted', 'requested', 'confirmed'].includes(l.status));
   const completedListings = myListings.filter(l => l.status === 'completed');
   const expiredListings = myListings.filter(l => l.status === 'expired' || l.status === 'cancelled');
-  const pendingRequests = myListings.filter(l => l.status === 'requested').length;
+  
+  // Get pending requests from the requests hook for accurate real-time count
+  const pendingRequests = requestsForMyListings.filter(r => r.status === 'pending');
+  const pendingRequestsCount = pendingRequests.length;
+  
   const totalMeals = myListings
     .filter(l => l.status === 'completed')
     .reduce((sum, l) => sum + l.quantity, 0);
@@ -57,10 +64,17 @@ const DonorDashboard = () => {
           </Button>
         </div>
 
+        {/* Pending Requests Alert */}
+        {pendingRequests.length > 0 && (
+          <div className="mb-8">
+            <PendingRequestsCard requests={pendingRequests} isLoading={isRequestsLoading} />
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard icon={Package} label="Active Listings" value={activeListings.length} delay={0} />
-          <StatCard icon={Clock} label="Pending Requests" value={pendingRequests} delay={100} />
+          <StatCard icon={Clock} label="Pending Requests" value={pendingRequestsCount} delay={100} />
           <StatCard icon={CheckCircle2} label="Completed" value={completedListings.length} delay={200} />
           <StatCard icon={UtensilsCrossed} label="Meals Donated" value={totalMeals} delay={300} />
         </div>
