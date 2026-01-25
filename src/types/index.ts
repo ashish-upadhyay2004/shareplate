@@ -1,6 +1,6 @@
 export type UserRole = 'donor' | 'ngo' | 'admin';
 
-export type DonationStatus = 'posted' | 'requested' | 'confirmed' | 'completed' | 'expired' | 'cancelled';
+export type DonationStatus = 'posted' | 'requested' | 'confirmed' | 'picked_up' | 'completed' | 'expired' | 'cancelled';
 
 export type FoodType = 'veg' | 'non-veg' | 'both';
 

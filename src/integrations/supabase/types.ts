@@ -437,6 +437,7 @@ export type Database = {
         | "posted"
         | "requested"
         | "confirmed"
+        | "picked_up"
         | "completed"
         | "expired"
         | "cancelled"
@@ -575,6 +576,7 @@ export const Constants = {
         "posted",
         "requested",
         "confirmed",
+        "picked_up",
         "completed",
         "expired",
         "cancelled",

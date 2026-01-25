@@ -27,7 +27,8 @@ import {
   MessageSquare,
   AlertTriangle,
   Loader2,
-  Star
+  Star,
+  Truck
 } from 'lucide-react';
 
 const ListingDetailPage = () => {
@@ -127,6 +128,23 @@ const ListingDetailPage = () => {
       toast({
         title: 'Error',
         description: 'Failed to decline request.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleMarkPickedUp = async () => {
+    try {
+      await updateListingStatus({ listingId: listing.id, status: 'picked_up' });
+      setListing(prev => prev ? { ...prev, status: 'picked_up' } : null);
+      toast({
+        title: 'Marked as Picked Up! 🚗',
+        description: 'The NGO has picked up the donation.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to mark as picked up.',
         variant: 'destructive',
       });
     }
@@ -264,8 +282,25 @@ const ListingDetailPage = () => {
                   </div>
                 )}
 
-                {/* Action buttons for confirmed status */}
+                {/* Action buttons for confirmed status - Mark as Picked Up */}
                 {isDonor && listing.status === 'confirmed' && (
+                  <div className="flex gap-3 pt-4 border-t">
+                    <Button onClick={handleMarkPickedUp} className="flex-1">
+                      <Truck className="h-4 w-4" />
+                      Mark as Picked Up
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => navigate(`/chat/${listing.id}`)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Chat
+                    </Button>
+                  </div>
+                )}
+
+                {/* Action buttons for picked_up status - Mark as Completed */}
+                {isDonor && listing.status === 'picked_up' && (
                   <div className="flex gap-3 pt-4 border-t">
                     <Button onClick={handleMarkCompleted} className="flex-1">
                       <CheckCircle2 className="h-4 w-4" />

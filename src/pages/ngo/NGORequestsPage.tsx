@@ -65,7 +65,7 @@ const NGORequestsPage = () => {
 
   const pendingRequests = myRequests.filter(r => r.status === 'pending');
   
-  // Confirmed: accepted requests where listing is not completed
+  // Confirmed: accepted requests where listing is not completed (includes confirmed and picked_up)
   const confirmedRequests = myRequests.filter(r => {
     if (r.status !== 'accepted') return false;
     const listing = listingsMap.get(r.listing_id);
@@ -125,6 +125,7 @@ const NGORequestsPage = () => {
 
   // Status timeline component - only shown for accepted requests
   const StatusTimeline = ({ listing }: { listing: DonationListing }) => {
+    const isPickedUp = listing.status === 'picked_up' || listing.status === 'completed';
     const isCompleted = listing.status === 'completed';
     
     return (
@@ -137,13 +138,13 @@ const NGORequestsPage = () => {
           <span className="text-xs text-green-700 font-medium">Confirmed</span>
           
           {/* Line to Picked Up */}
-          <div className={`h-px flex-1 ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`} />
+          <div className={`h-px flex-1 ${isPickedUp ? 'bg-green-500' : 'bg-green-300'}`} />
           
           {/* Picked Up */}
-          <div className={`h-3 w-3 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`}>
-            {isCompleted && <CheckCircle2 className="h-2 w-2 text-white" />}
+          <div className={`h-3 w-3 rounded-full flex items-center justify-center ${isPickedUp ? 'bg-green-500' : 'bg-green-300'}`}>
+            {isPickedUp && <CheckCircle2 className="h-2 w-2 text-white" />}
           </div>
-          <span className={`text-xs ${isCompleted ? 'text-green-700 font-medium' : 'text-green-600'}`}>
+          <span className={`text-xs ${isPickedUp ? 'text-green-700 font-medium' : 'text-green-600'}`}>
             Picked Up
           </span>
           

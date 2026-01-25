@@ -5,7 +5,8 @@ import {
   CheckCircle2, 
   PartyPopper, 
   Timer, 
-  XCircle 
+  XCircle,
+  Truck
 } from 'lucide-react';
 
 interface StatusBadgeProps {
@@ -28,6 +29,11 @@ export const StatusBadge = ({ status, className = '' }: StatusBadgeProps) => {
     confirmed: {
       label: 'Confirmed',
       icon: CheckCircle2,
+      className: 'status-confirmed',
+    },
+    picked_up: {
+      label: 'Picked Up',
+      icon: Truck,
       className: 'status-confirmed',
     },
     completed: {
