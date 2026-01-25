@@ -237,12 +237,16 @@ All tables have RLS enabled with appropriate policies:
 
 ### Authentication Flow
 1. User submits credentials
-2. Supabase Auth validates
-3. Role fetched from `user_roles`
-4. Profile fetched from `profiles`
-5. Verification status checked
-6. Blocked status checked
-7. Access granted or denied with appropriate message
+2. Loading state activated to prevent race conditions
+3. Supabase Auth validates credentials
+4. Role fetched from `user_roles` and Profile fetched from `profiles` in parallel
+5. Session and user state set immediately
+6. Blocked status checked (blocked users are signed out)
+7. Verification status checked (admins bypass this check)
+8. For non-admin users with pending/rejected status: signed out with error
+9. Loading state deactivated only after all data is ready
+10. User redirected to role-appropriate dashboard
+11. Access granted or denied with appropriate message
 
 ### Security Best Practices
 - No sensitive data in client-side storage

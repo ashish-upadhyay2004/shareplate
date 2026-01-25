@@ -124,21 +124,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       async (event, session) => {
         if (!mounted) return;
         
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Use setTimeout to avoid potential race conditions with triggers
-          setTimeout(async () => {
-            if (mounted) {
-              await fetchUserData(session.user.id);
-            }
-          }, 100);
-        } else {
+        // Only handle sign out events here - login is handled by login function
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
           setProfile(null);
           setRole(null);
+          setIsLoading(false);
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Handle token refresh
+          setSession(session);
+          setUser(session.user);
         }
-        setIsLoading(false);
       }
     );
 
@@ -146,10 +143,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!mounted) return;
       
-      setSession(session);
-      setUser(session?.user ?? null);
-      
       if (session?.user) {
+        setSession(session);
+        setUser(session.user);
         await fetchUserData(session.user.id);
       }
       setIsLoading(false);
@@ -163,25 +159,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
+      // Set loading to true at the start of login
+      setIsLoading(true);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        setIsLoading(false);
         return { error: error.message };
       }
 
       if (!data.user) {
+        setIsLoading(false);
         return { error: 'Login failed. Please try again.' };
       }
 
-      // Fetch user data immediately after login
+      // Fetch user data immediately after login and set state
       const userData = await fetchUserData(data.user.id);
+      
+      // Set session and user immediately
+      setSession(data.session);
+      setUser(data.user);
 
       // Check if user is blocked
       if (userData.profile?.is_blocked) {
         await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
+        setProfile(null);
+        setRole(null);
+        setIsLoading(false);
         const reason = userData.profile.blocked_reason || 'Please contact support.';
         return { error: `Your account has been suspended. ${reason}` };
       }
@@ -190,17 +200,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (userData.role !== 'admin' && userData.profile) {
         if (userData.profile.verification_status === 'pending') {
           await supabase.auth.signOut();
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setRole(null);
+          setIsLoading(false);
           return { error: 'Your account is pending verification. Please wait for admin approval.' };
         }
         if (userData.profile.verification_status === 'rejected') {
           await supabase.auth.signOut();
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+          setRole(null);
+          setIsLoading(false);
           return { error: 'Your account has been rejected. Please contact support for more information.' };
         }
       }
 
-      return { error: null };
+      // Only set isLoading to false after all data is ready
+      setIsLoading(false);
+      return { error: null, role: userData.role };
     } catch (error) {
       console.error('Login error:', error);
+      setIsLoading(false);
       return { error: 'An unexpected error occurred. Please try again.' };
     }
   };
@@ -321,6 +344,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // isAuthenticated should check for user, session, role, AND profile
+  const isAuthenticated = !!user && !!session && !!role && !!profile;
+
   return (
     <AuthContext.Provider
       value={{
@@ -329,7 +355,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         profile,
         role,
         isLoading,
-        isAuthenticated: !!user && !!profile,
+        isAuthenticated,
         login,
         register,
         logout,
