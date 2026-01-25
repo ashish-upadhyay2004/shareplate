@@ -282,37 +282,44 @@ const ListingDetailPage = () => {
                   </div>
                 )}
 
-                {/* Action buttons for confirmed status - Mark as Picked Up */}
+                {/* Info for confirmed status - NGO should mark as picked up */}
                 {isDonor && listing.status === 'confirmed' && (
-                  <div className="flex gap-3 pt-4 border-t">
-                    <Button onClick={handleMarkPickedUp} className="flex-1">
-                      <Truck className="h-4 w-4" />
-                      Mark as Picked Up
-                    </Button>
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
+                      <Clock className="h-4 w-4" />
+                      Waiting for NGO to confirm pickup
+                    </div>
                     <Button 
                       variant="outline" 
+                      className="w-full"
                       onClick={() => navigate(`/chat/${listing.id}`)}
                     >
                       <MessageSquare className="h-4 w-4" />
-                      Chat
+                      Chat with NGO
                     </Button>
                   </div>
                 )}
 
-                {/* Action buttons for picked_up status - Mark as Completed */}
+                {/* Action buttons for picked_up status - Donor confirms completion */}
                 {isDonor && listing.status === 'picked_up' && (
-                  <div className="flex gap-3 pt-4 border-t">
-                    <Button onClick={handleMarkCompleted} className="flex-1">
-                      <CheckCircle2 className="h-4 w-4" />
-                      Mark as Completed
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => navigate(`/chat/${listing.id}`)}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      Chat
-                    </Button>
+                  <div className="space-y-3 pt-4 border-t">
+                    <div className="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-md">
+                      <Truck className="h-4 w-4" />
+                      NGO has confirmed pickup - please verify and complete
+                    </div>
+                    <div className="flex gap-3">
+                      <Button onClick={handleMarkCompleted} className="flex-1">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Confirm Completion
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => navigate(`/chat/${listing.id}`)}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Chat
+                      </Button>
+                    </div>
                   </div>
                 )}
 

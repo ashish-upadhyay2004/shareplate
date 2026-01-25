@@ -77,6 +77,10 @@ Share Plate is a food rescue platform connecting restaurants (donors) with NGOs 
 ### Donation Listings
 - **Fields**: Food type, category, quantity, packaging, pickup window, location (GPS), photos, hygiene notes, allergens
 - **Status Flow**: Posted → Requested → Confirmed → Picked Up → Completed
+- **Two-Party Confirmation**: 
+  - NGO marks "Picked Up" after collecting food
+  - Donor confirms "Completed" to finalize handoff
+  - This ensures mutual confirmation of successful pickups
 - **Automatic GPS**: Donor's current location is auto-fetched during listing creation
 
 ### Request System
@@ -131,8 +135,9 @@ Share Plate is a food rescue platform connecting restaurants (donors) with NGOs 
 6. **Accept/Reject Request** → Confirm pickup or decline
 7. **Reconsider** → Can re-accept previously rejected requests if needed
 8. **Coordinate** → Chat with NGO for pickup logistics
-9. **Mark Complete** → Confirm successful handover
-10. **Give Feedback** → Rate the NGO (visible on profile)
+9. **Wait for Pickup** → NGO marks donation as "Picked Up"
+10. **Confirm Completion** → Verify successful handover (two-party confirmation)
+11. **Give Feedback** → Rate the NGO (visible on profile)
 
 ### NGO Workflow
 1. **Register** → Create account with organization details
@@ -141,8 +146,9 @@ Share Plate is a food rescue platform connecting restaurants (donors) with NGOs 
 4. **Request Pickup** → Submit request with preferred time
 5. **Wait for Confirmation** → Donor reviews request
 6. **Coordinate** → Access donor contact, use chat
-7. **Complete Pickup** → Collect food donation
-8. **Give Feedback** → Rate the donor
+7. **Mark as Picked Up** → Confirm collection of food (two-party confirmation step 1)
+8. **Wait for Completion** → Donor confirms successful handoff (step 2)
+9. **Give Feedback** → Rate the donor
 
 ### Admin Workflow
 1. **Login** → Dedicated admin portal
