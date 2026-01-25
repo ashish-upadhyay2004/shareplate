@@ -21,18 +21,19 @@ const AdminLoginPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error } = await login(email, password);
+    const result = await login(email, password);
     
-    if (!error) {
+    if (!result.error) {
       toast({
         title: 'Welcome, Admin!',
         description: 'You have successfully logged in.',
       });
-      navigate('/admin/dashboard');
+      // Use replace to prevent back navigation to login page
+      navigate('/admin/dashboard', { replace: true });
     } else {
       toast({
         title: 'Login failed',
-        description: error,
+        description: result.error,
         variant: 'destructive',
       });
     }
