@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRequests } from '@/hooks/useRequests';
 import { useListings, DonationListing } from '@/hooks/useListings';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
+import { ComplaintDialog } from '@/components/ComplaintDialog';
 import { format } from 'date-fns';
 import { 
   Clock, 
@@ -19,20 +20,27 @@ import {
   ArrowRight,
   Inbox,
   Loader2,
-  Star
+  Star,
+  AlertTriangle
 } from 'lucide-react';
 
 const NGORequestsPage = () => {
   const { myRequests, isLoading: isLoadingRequests } = useRequests();
-  const { listings, getListingById, isLoading: isLoadingListings } = useListings();
+  const { getListingById, isLoading: isLoadingListings } = useListings();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('pending');
   const [listingsMap, setListingsMap] = useState<Map<string, DonationListing>>(new Map());
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [complaintDialogOpen, setComplaintDialogOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<{
     listingId: string;
     toUserId: string;
     toUserName: string;
+  } | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<{
+    toUserId: string;
+    toUserName: string;
+    listingId: string;
   } | null>(null);
 
   // Fetch listing details for each request
@@ -56,24 +64,27 @@ const NGORequestsPage = () => {
   }, [myRequests, getListingById]);
 
   const pendingRequests = myRequests.filter(r => r.status === 'pending');
-  // Show accepted requests where listing is not completed
-  const acceptedRequests = myRequests.filter(r => {
+  
+  // Confirmed: accepted requests where listing is not completed
+  const confirmedRequests = myRequests.filter(r => {
     if (r.status !== 'accepted') return false;
     const listing = listingsMap.get(r.listing_id);
     return listing && listing.status !== 'completed';
   });
-  // Show completed requests (where listing is completed)
+  
+  // Completed: accepted requests where listing is completed
   const completedRequests = myRequests.filter(r => {
     if (r.status !== 'accepted') return false;
     const listing = listingsMap.get(r.listing_id);
     return listing && listing.status === 'completed';
   });
+  
   const rejectedRequests = myRequests.filter(r => r.status === 'rejected');
 
   const getRequestsForTab = () => {
     switch (activeTab) {
       case 'pending': return pendingRequests;
-      case 'confirmed': return acceptedRequests;
+      case 'confirmed': return confirmedRequests;
       case 'completed': return completedRequests;
       case 'declined': return rejectedRequests;
       default: return myRequests;
@@ -103,6 +114,54 @@ const NGORequestsPage = () => {
     setFeedbackDialogOpen(true);
   };
 
+  const handleReportIssue = (listing: DonationListing) => {
+    setSelectedComplaint({
+      toUserId: listing.donor_id,
+      toUserName: listing.donor_profile?.org_name || listing.donor_profile?.name || 'Donor',
+      listingId: listing.id,
+    });
+    setComplaintDialogOpen(true);
+  };
+
+  // Status timeline component - only shown for accepted requests
+  const StatusTimeline = ({ listing }: { listing: DonationListing }) => {
+    const isCompleted = listing.status === 'completed';
+    
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 mb-4">
+        <div className="flex gap-2 items-center flex-1">
+          {/* Confirmed - always green for accepted requests */}
+          <div className="h-3 w-3 rounded-full bg-green-500 flex items-center justify-center">
+            <CheckCircle2 className="h-2 w-2 text-white" />
+          </div>
+          <span className="text-xs text-green-700 font-medium">Confirmed</span>
+          
+          {/* Line to Picked Up */}
+          <div className={`h-px flex-1 ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`} />
+          
+          {/* Picked Up */}
+          <div className={`h-3 w-3 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`}>
+            {isCompleted && <CheckCircle2 className="h-2 w-2 text-white" />}
+          </div>
+          <span className={`text-xs ${isCompleted ? 'text-green-700 font-medium' : 'text-green-600'}`}>
+            Picked Up
+          </span>
+          
+          {/* Line to Complete */}
+          <div className={`h-px flex-1 ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`} />
+          
+          {/* Complete */}
+          <div className={`h-3 w-3 rounded-full flex items-center justify-center ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`}>
+            {isCompleted && <CheckCircle2 className="h-2 w-2 text-white" />}
+          </div>
+          <span className={`text-xs ${isCompleted ? 'text-green-700 font-medium' : 'text-green-600'}`}>
+            Complete
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -123,8 +182,8 @@ const NGORequestsPage = () => {
             <TabsTrigger value="confirmed" className="gap-2">
               <CheckCircle2 className="h-4 w-4" />
               Confirmed
-              {acceptedRequests.length > 0 && (
-                <Badge variant="secondary" className="ml-1">{acceptedRequests.length}</Badge>
+              {confirmedRequests.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{confirmedRequests.length}</Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="completed" className="gap-2">
@@ -186,7 +245,7 @@ const NGORequestsPage = () => {
                                 request.status === 'rejected' ? 'destructive' : 'secondary'
                               }>
                                 {request.status === 'pending' ? 'Awaiting Response' :
-                                 request.status === 'accepted' ? 'Confirmed' : 'Declined'}
+                                 request.status === 'accepted' ? (listing.status === 'completed' ? 'Completed' : 'Confirmed') : 'Declined'}
                               </Badge>
                             </div>
 
@@ -205,20 +264,9 @@ const NGORequestsPage = () => {
                               </div>
                             </div>
 
-                            {/* Timeline for accepted - reflects listing status */}
+                            {/* Timeline for accepted requests only */}
                             {request.status === 'accepted' && (
-                              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-50 border border-green-200 mb-4">
-                                <div className="flex gap-2 items-center flex-1">
-                                  <div className="h-2 w-2 rounded-full bg-green-500" />
-                                  <span className="text-xs text-green-700 font-medium">Confirmed</span>
-                                  <div className={`h-px flex-1 ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
-                                  <div className={`h-2 w-2 rounded-full ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
-                                  <span className={`text-xs ${listing.status === 'completed' ? 'text-green-700 font-medium' : 'text-green-600'}`}>Picked Up</span>
-                                  <div className={`h-px flex-1 ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
-                                  <div className={`h-2 w-2 rounded-full ${listing.status === 'completed' ? 'bg-green-500' : 'bg-green-300'}`} />
-                                  <span className={`text-xs ${listing.status === 'completed' ? 'text-green-700 font-medium' : 'text-green-600'}`}>Complete</span>
-                                </div>
-                              </div>
+                              <StatusTimeline listing={listing} />
                             )}
 
                             {/* Contact info for accepted */}
@@ -239,14 +287,25 @@ const NGORequestsPage = () => {
                                   Open Chat
                                 </Button>
                                 {listing.status === 'completed' && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleGiveFeedback(listing)}
-                                  >
-                                    <Star className="h-4 w-4" />
-                                    Give Feedback
-                                  </Button>
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleGiveFeedback(listing)}
+                                    >
+                                      <Star className="h-4 w-4" />
+                                      Give Feedback
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleReportIssue(listing)}
+                                      className="text-amber-600 hover:text-amber-700"
+                                    >
+                                      <AlertTriangle className="h-4 w-4" />
+                                      Report Issue
+                                    </Button>
+                                  </>
                                 )}
                               </div>
                             )}
@@ -280,6 +339,16 @@ const NGORequestsPage = () => {
           listingId={selectedFeedback.listingId}
           toUserId={selectedFeedback.toUserId}
           toUserName={selectedFeedback.toUserName}
+        />
+      )}
+
+      {selectedComplaint && (
+        <ComplaintDialog
+          open={complaintDialogOpen}
+          onOpenChange={setComplaintDialogOpen}
+          toUserId={selectedComplaint.toUserId}
+          toUserName={selectedComplaint.toUserName}
+          listingId={selectedComplaint.listingId}
         />
       )}
     </Layout>

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/StatCard';
+import { LandingMapPreview } from '@/components/LandingMapPreview';
 import { impactStats } from '@/data/mockData';
 import heroImage from '@/assets/hero-image.jpg';
 import { 
@@ -17,7 +18,9 @@ import {
   Globe,
   ChevronRight,
   MapPin,
-  Clock
+  Clock,
+  Shield,
+  Zap
 } from 'lucide-react';
 
 const LandingPage = () => {
@@ -38,6 +41,29 @@ const LandingPage = () => {
       icon: HandHeart,
       title: 'Food Reaches Those in Need',
       description: 'Coordinated pickup ensures fresh food reaches communities quickly and safely.',
+    },
+  ];
+
+  const features = [
+    {
+      icon: MapPin,
+      title: 'Location-Based Matching',
+      description: 'GPS-enabled listings help NGOs find nearby donations instantly.',
+    },
+    {
+      icon: Clock,
+      title: 'Real-Time Tracking',
+      description: 'Track donation status from listing to completion.',
+    },
+    {
+      icon: Shield,
+      title: 'Verified Partners',
+      description: 'All restaurants and NGOs are verified for trust and safety.',
+    },
+    {
+      icon: Zap,
+      title: 'Instant Notifications',
+      description: 'Get notified immediately when new donations match your criteria.',
     },
   ];
 
@@ -219,8 +245,43 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* Platform Features */}
       <section className="py-20 md:py-28">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Platform Features</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Powerful tools designed to make food rescue efficient and impactful
+            </p>
+          </div>
+
+          <div className="max-w-6xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Map Preview */}
+              <LandingMapPreview />
+
+              {/* Features Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                {features.map((feature, index) => (
+                  <div 
+                    key={index}
+                    className="bento-card p-4"
+                  >
+                    <div className="p-2 rounded-lg bg-primary/10 w-fit mb-3">
+                      <feature.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="font-semibold mb-1">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 md:py-28 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Stories of Impact</h2>
@@ -264,59 +325,32 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Future Features Teaser */}
-      <section className="py-20 md:py-28 bg-gradient-to-br from-primary/5 to-secondary/5">
+      {/* Multi-Language Support Teaser */}
+      <section className="py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">Coming Soon</h2>
-              <p className="text-muted-foreground">
-                We're constantly improving to serve you better
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-6">
-              {/* Map Integration Placeholder */}
-              <div className="bento-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-lg bg-blue-100">
-                    <MapPin className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <h3 className="font-semibold">Map Integration</h3>
+            <div className="bento-card">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-purple-100">
+                  <Globe className="h-5 w-5 text-purple-600" />
                 </div>
-                <div className="aspect-video bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDIwIEwgMjAgMjAgMjAgMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTNjNWZkIiBzdHJva2Utd2lkdGg9IjAuNSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-50" />
-                  <div className="relative flex flex-col items-center gap-2 text-blue-600/70">
-                    <MapPin className="h-10 w-10" />
-                    <span className="text-sm font-medium">Interactive Map View</span>
-                  </div>
+                <div>
+                  <h3 className="font-semibold">Multi-Language Support Coming Soon</h3>
+                  <p className="text-sm text-muted-foreground">Japanese language support expected Q2 2025</p>
                 </div>
               </div>
-
-              {/* Language Toggle Placeholder */}
-              <div className="bento-card">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 rounded-lg bg-purple-100">
-                    <Globe className="h-5 w-5 text-purple-600" />
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                  <span className="font-medium">English</span>
+                  <div className="h-5 w-10 rounded-full bg-primary/20 relative">
+                    <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary" />
                   </div>
-                  <h3 className="font-semibold">Multi-Language Support</h3>
                 </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <span className="font-medium">English</span>
-                    <div className="h-5 w-10 rounded-full bg-primary/20 relative">
-                      <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-primary" />
-                    </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60">
+                  <span className="font-medium">日本語</span>
+                  <div className="h-5 w-10 rounded-full bg-muted relative">
+                    <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-muted-foreground/30" />
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 opacity-60">
-                    <span className="font-medium">日本語</span>
-                    <div className="h-5 w-10 rounded-full bg-muted relative">
-                      <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-muted-foreground/30" />
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground text-center pt-2">
-                    Japanese language support coming Q2 2025
-                  </p>
                 </div>
               </div>
             </div>
@@ -325,7 +359,7 @@ const LandingPage = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 md:py-28">
+      <section className="py-20 md:py-28 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center bento-card bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 p-12 md:p-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">

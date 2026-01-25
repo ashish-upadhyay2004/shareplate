@@ -46,6 +46,53 @@ export type Database = {
           },
         ]
       }
+      complaints: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string
+          from_user_id: string
+          id: string
+          listing_id: string | null
+          status: string
+          to_user_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          from_user_id: string
+          id?: string
+          listing_id?: string | null
+          status?: string
+          to_user_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          from_user_id?: string
+          id?: string
+          listing_id?: string | null
+          status?: string
+          to_user_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaints_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "donation_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donation_listings: {
         Row: {
           address: string
@@ -197,6 +244,36 @@ export type Database = {
           },
         ]
       }
+      monthly_analytics: {
+        Row: {
+          created_at: string
+          donations_count: number
+          id: string
+          meals_served: number
+          month: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          donations_count?: number
+          id?: string
+          meals_served?: number
+          month: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          donations_count?: number
+          id?: string
+          meals_served?: number
+          month?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -242,10 +319,13 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          blocked_at: string | null
+          blocked_reason: string | null
           contact: string | null
           created_at: string
           email: string
           id: string
+          is_blocked: boolean
           name: string
           org_name: string | null
           updated_at: string
@@ -255,10 +335,13 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           contact?: string | null
           created_at?: string
           email: string
           id?: string
+          is_blocked?: boolean
           name: string
           org_name?: string | null
           updated_at?: string
@@ -268,10 +351,13 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          blocked_at?: string | null
+          blocked_reason?: string | null
           contact?: string | null
           created_at?: string
           email?: string
           id?: string
+          is_blocked?: boolean
           name?: string
           org_name?: string | null
           updated_at?: string
