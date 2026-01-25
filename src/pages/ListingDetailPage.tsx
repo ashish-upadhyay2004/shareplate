@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { FeedbackDialog } from '@/components/FeedbackDialog';
+import { ComplaintDialog } from '@/components/ComplaintDialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useListings, DonationListing } from '@/hooks/useListings';
 import { useRequests, DonationRequest } from '@/hooks/useRequests';
@@ -33,7 +34,7 @@ const ListingDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, profile, role } = useAuth();
+  const { user, role } = useAuth();
   const { getListingById, updateListingStatus } = useListings();
   const { getRequestsByListing, updateRequestStatus } = useRequests();
 
@@ -41,10 +42,16 @@ const ListingDetailPage = () => {
   const [requests, setRequests] = useState<DonationRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [complaintDialogOpen, setComplaintDialogOpen] = useState(false);
   const [selectedFeedback, setSelectedFeedback] = useState<{
     listingId: string;
     toUserId: string;
     toUserName: string;
+  } | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<{
+    toUserId: string;
+    toUserName: string;
+    listingId: string;
   } | null>(null);
 
   useEffect(() => {
@@ -150,6 +157,15 @@ const ListingDetailPage = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleReportIssue = (userId: string, userName: string) => {
+    setSelectedComplaint({
+      toUserId: userId,
+      toUserName: userName,
+      listingId: listing.id,
+    });
+    setComplaintDialogOpen(true);
   };
 
   return (
@@ -283,6 +299,17 @@ const ListingDetailPage = () => {
                       <Star className="h-4 w-4" />
                       Give Feedback
                     </Button>
+                    <Button 
+                      variant="ghost"
+                      className="text-amber-600 hover:text-amber-700"
+                      onClick={() => handleReportIssue(
+                        acceptedRequest.ngo_id,
+                        acceptedRequest.ngo_profile?.org_name || acceptedRequest.ngo_profile?.name || 'NGO'
+                      )}
+                    >
+                      <AlertTriangle className="h-4 w-4" />
+                      Report Issue
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -393,21 +420,34 @@ const ListingDetailPage = () => {
                     Open Chat
                   </Button>
                   {listing.status === 'completed' && (
-                    <Button 
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        setSelectedFeedback({
-                          listingId: listing.id,
-                          toUserId: listing.donor_id,
-                          toUserName: listing.donor_profile?.org_name || listing.donor_profile?.name || 'Donor',
-                        });
-                        setFeedbackDialogOpen(true);
-                      }}
-                    >
-                      <Star className="h-4 w-4" />
-                      Give Feedback
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          setSelectedFeedback({
+                            listingId: listing.id,
+                            toUserId: listing.donor_id,
+                            toUserName: listing.donor_profile?.org_name || listing.donor_profile?.name || 'Donor',
+                          });
+                          setFeedbackDialogOpen(true);
+                        }}
+                      >
+                        <Star className="h-4 w-4" />
+                        Give Feedback
+                      </Button>
+                      <Button 
+                        variant="ghost"
+                        className="w-full text-amber-600 hover:text-amber-700"
+                        onClick={() => handleReportIssue(
+                          listing.donor_id,
+                          listing.donor_profile?.org_name || listing.donor_profile?.name || 'Donor'
+                        )}
+                      >
+                        <AlertTriangle className="h-4 w-4" />
+                        Report Issue
+                      </Button>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -423,6 +463,16 @@ const ListingDetailPage = () => {
           listingId={selectedFeedback.listingId}
           toUserId={selectedFeedback.toUserId}
           toUserName={selectedFeedback.toUserName}
+        />
+      )}
+
+      {selectedComplaint && (
+        <ComplaintDialog
+          open={complaintDialogOpen}
+          onOpenChange={setComplaintDialogOpen}
+          toUserId={selectedComplaint.toUserId}
+          toUserName={selectedComplaint.toUserName}
+          listingId={selectedComplaint.listingId}
         />
       )}
     </Layout>

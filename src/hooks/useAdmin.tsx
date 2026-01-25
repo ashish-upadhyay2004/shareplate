@@ -13,6 +13,9 @@ export interface UserProfile {
   address: string | null;
   avatar_url: string | null;
   verification_status: 'pending' | 'approved' | 'rejected';
+  is_blocked: boolean;
+  blocked_reason: string | null;
+  blocked_at: string | null;
   created_at: string;
   updated_at: string;
   role?: 'donor' | 'ngo' | 'admin';
@@ -26,6 +29,13 @@ export interface AdminStats {
   totalListings: number;
   completedDonations: number;
   activeListings: number;
+}
+
+export interface MonthlyAnalytics {
+  month: number;
+  year: number;
+  donations_count: number;
+  meals_served: number;
 }
 
 export const useAdmin = () => {
@@ -53,6 +63,9 @@ export const useAdmin = () => {
 
       return profiles.map(p => ({
         ...p,
+        is_blocked: p.is_blocked ?? false,
+        blocked_reason: p.blocked_reason ?? null,
+        blocked_at: p.blocked_at ?? null,
         role: rolesMap.get(p.user_id) as UserProfile['role'],
       })) as UserProfile[];
     },
@@ -86,6 +99,68 @@ export const useAdmin = () => {
     enabled: !!user && isAdmin,
   });
 
+  // Fetch real monthly analytics from database
+  const analyticsQuery = useQuery({
+    queryKey: ['admin-analytics'],
+    queryFn: async (): Promise<MonthlyAnalytics[]> => {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+
+      // Try to get from monthly_analytics table first
+      const { data: analyticsData, error } = await supabase
+        .from('monthly_analytics')
+        .select('*')
+        .order('year', { ascending: true })
+        .order('month', { ascending: true });
+
+      if (!error && analyticsData && analyticsData.length > 0) {
+        // Filter to only include months up to current month
+        return analyticsData.filter(a => {
+          if (a.year < currentYear) return true;
+          if (a.year === currentYear && a.month <= currentMonth) return true;
+          return false;
+        });
+      }
+
+      // Fallback: Calculate from completed listings
+      const listings = listingsQuery.data ?? [];
+      const completedListings = listings.filter(l => l.status === 'completed');
+      
+      const monthlyMap = new Map<string, { donations: number; meals: number }>();
+      
+      completedListings.forEach(listing => {
+        const date = new Date(listing.created_at);
+        const key = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        const existing = monthlyMap.get(key) || { donations: 0, meals: 0 };
+        monthlyMap.set(key, {
+          donations: existing.donations + 1,
+          meals: existing.meals + (listing.quantity || 0),
+        });
+      });
+
+      const result: MonthlyAnalytics[] = [];
+      monthlyMap.forEach((value, key) => {
+        const [year, month] = key.split('-').map(Number);
+        // Only include months up to current month
+        if (year < currentYear || (year === currentYear && month <= currentMonth)) {
+          result.push({
+            year,
+            month,
+            donations_count: value.donations,
+            meals_served: value.meals,
+          });
+        }
+      });
+
+      return result.sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.month - b.month;
+      });
+    },
+    enabled: !!user && isAdmin && !!listingsQuery.data,
+  });
+
   const statsQuery = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async (): Promise<AdminStats> => {
@@ -96,7 +171,7 @@ export const useAdmin = () => {
         totalUsers: profiles.length,
         totalDonors: profiles.filter(p => p.role === 'donor').length,
         totalNgos: profiles.filter(p => p.role === 'ngo').length,
-        pendingVerifications: profiles.filter(p => p.verification_status === 'pending').length,
+        pendingVerifications: profiles.filter(p => p.verification_status === 'pending' && p.role !== 'admin').length,
         totalListings: listings.length,
         completedDonations: listings.filter(l => l.status === 'completed').length,
         activeListings: listings.filter(l => ['posted', 'requested', 'confirmed'].includes(l.status)).length,
@@ -106,7 +181,7 @@ export const useAdmin = () => {
   });
 
   const updateVerificationMutation = useMutation({
-    mutationFn: async ({ userId, status }: { userId: string; status: 'approved' | 'rejected' }) => {
+    mutationFn: async ({ userId, status }: { userId: string; status: 'approved' | 'rejected' | 'pending' }) => {
       const { error } = await supabase
         .from('profiles')
         .update({ verification_status: status })
@@ -117,14 +192,49 @@ export const useAdmin = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      const statusText = variables.status === 'approved' ? 'approved' : 
+                         variables.status === 'rejected' ? 'rejected' : 'set to pending';
       toast({
-        title: variables.status === 'approved' ? 'User Approved!' : 'User Rejected',
-        description: `The user has been ${variables.status}.`,
+        title: 'Status Updated',
+        description: `User has been ${statusText}.`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: 'Error updating verification',
+        title: 'Error updating status',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const blockUserMutation = useMutation({
+    mutationFn: async ({ userId, blocked, reason }: { userId: string; blocked: boolean; reason?: string }) => {
+      const updateData: Record<string, unknown> = {
+        is_blocked: blocked,
+        blocked_reason: blocked ? reason || null : null,
+        blocked_at: blocked ? new Date().toISOString() : null,
+      };
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
+      toast({
+        title: variables.blocked ? 'User Blocked' : 'User Unblocked',
+        description: variables.blocked 
+          ? 'The user has been blocked from the platform.'
+          : 'The user has been unblocked.',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
         description: error.message,
         variant: 'destructive',
       });
@@ -160,7 +270,7 @@ export const useAdmin = () => {
     totalUsers: profiles.length,
     totalDonors: profiles.filter(p => p.role === 'donor').length,
     totalNgos: profiles.filter(p => p.role === 'ngo').length,
-    pendingVerifications: profiles.filter(p => p.verification_status === 'pending').length,
+    pendingVerifications: profiles.filter(p => p.verification_status === 'pending' && p.role !== 'admin').length,
     totalListings: listingsQuery.data?.length ?? 0,
     completedDonations: listingsQuery.data?.filter(l => l.status === 'completed').length ?? 0,
     activeListings: listingsQuery.data?.filter(l => ['posted', 'requested', 'confirmed'].includes(l.status)).length ?? 0,
@@ -174,13 +284,18 @@ export const useAdmin = () => {
     ngos,
     listings: listingsQuery.data ?? [],
     stats: statsQuery.data ?? defaultStats,
+    analytics: analyticsQuery.data ?? [],
     isLoading: profilesQuery.isLoading || listingsQuery.isLoading,
     updateVerification: updateVerificationMutation.mutateAsync,
+    isUpdatingVerification: updateVerificationMutation.isPending,
+    blockUser: blockUserMutation.mutateAsync,
+    isBlockingUser: blockUserMutation.isPending,
     deleteListing: deleteListingMutation.mutateAsync,
     refetch: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-profiles'] });
       queryClient.invalidateQueries({ queryKey: ['admin-listings'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-analytics'] });
     },
   };
 };
