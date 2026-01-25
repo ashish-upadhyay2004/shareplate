@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
-export type DonationStatus = 'posted' | 'requested' | 'confirmed' | 'completed' | 'expired' | 'cancelled';
+export type DonationStatus = 'posted' | 'requested' | 'confirmed' | 'picked_up' | 'completed' | 'expired' | 'cancelled';
 export type FoodType = 'veg' | 'non-veg' | 'both';
 
 export interface DonorProfile {

@@ -76,7 +76,7 @@ Share Plate is a food rescue platform connecting restaurants (donors) with NGOs 
 
 ### Donation Listings
 - **Fields**: Food type, category, quantity, packaging, pickup window, location (GPS), photos, hygiene notes, allergens
-- **Status Flow**: Posted → Requested → Confirmed → Completed
+- **Status Flow**: Posted → Requested → Confirmed → Picked Up → Completed
 - **Automatic GPS**: Donor's current location is auto-fetched during listing creation
 
 ### Request System
