@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -115,10 +116,36 @@ export const useListings = () => {
     enabled: !!user,
   });
 
+  // Real-time subscription for donation listings changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`listings-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'donation_listings',
+        },
+        () => {
+          // Invalidate queries to refetch latest data
+          queryClient.invalidateQueries({ queryKey: ['listings'] });
+          queryClient.invalidateQueries({ queryKey: ['my-listings', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
   const createListingMutation = useMutation({
     mutationFn: async (data: CreateListingData) => {
       if (!user) throw new Error('Not authenticated');
-      
+
       const { data: listing, error } = await supabase
         .from('donation_listings')
         .insert({
