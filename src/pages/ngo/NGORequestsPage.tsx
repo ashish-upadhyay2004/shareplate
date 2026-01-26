@@ -22,8 +22,7 @@ import {
   Inbox,
   Loader2,
   Star,
-  AlertTriangle,
-  Truck
+  AlertTriangle
 } from 'lucide-react';
 
 const NGORequestsPage = () => {
@@ -35,7 +34,6 @@ const NGORequestsPage = () => {
   const [listingsMap, setListingsMap] = useState<Map<string, DonationListing>>(new Map());
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [complaintDialogOpen, setComplaintDialogOpen] = useState(false);
-  const [isMarkingPickup, setIsMarkingPickup] = useState<string | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<{
     listingId: string;
     toUserId: string;
@@ -69,14 +67,14 @@ const NGORequestsPage = () => {
 
   const pendingRequests = myRequests.filter(r => r.status === 'pending');
   
-  // Confirmed: accepted requests where listing is not completed (includes confirmed and picked_up)
+  // Confirmed: accepted requests where listing is confirmed (awaiting donor completion)
   const confirmedRequests = myRequests.filter(r => {
     if (r.status !== 'accepted') return false;
     const listing = listingsMap.get(r.listing_id);
-    return listing && listing.status !== 'completed';
+    return listing && (listing.status === 'confirmed' || listing.status === 'picked_up');
   });
   
-  // Completed: accepted requests where listing is completed
+  // Completed: accepted requests where listing is completed by donor
   const completedRequests = myRequests.filter(r => {
     if (r.status !== 'accepted') return false;
     const listing = listingsMap.get(r.listing_id);
@@ -127,38 +125,10 @@ const NGORequestsPage = () => {
     setComplaintDialogOpen(true);
   };
 
-  const handleMarkPickedUp = async (listing: DonationListing) => {
-    setIsMarkingPickup(listing.id);
-    try {
-      await updateListingStatus({ listingId: listing.id, status: 'picked_up' });
-      // Update local state
-      setListingsMap(prev => {
-        const newMap = new Map(prev);
-        const existingListing = newMap.get(listing.id);
-        if (existingListing) {
-          newMap.set(listing.id, { ...existingListing, status: 'picked_up' });
-        }
-        return newMap;
-      });
-      toast({
-        title: 'Pickup Confirmed!',
-        description: 'The donor will be notified. They will mark it as completed after handoff.',
-      });
-    } catch (error) {
-      console.error('Error marking as picked up:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update status. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsMarkingPickup(null);
-    }
-  };
+  // Removed handleMarkPickedUp - now using single-step donor-only completion flow
 
-  // Status timeline component - only shown for accepted requests
+  // Status timeline component - simplified 2-step flow (Confirmed → Completed by Donor)
   const StatusTimeline = ({ listing }: { listing: DonationListing }) => {
-    const isPickedUp = listing.status === 'picked_up' || listing.status === 'completed';
     const isCompleted = listing.status === 'completed';
     
     return (
@@ -169,17 +139,6 @@ const NGORequestsPage = () => {
             <CheckCircle2 className="h-2 w-2 text-white" />
           </div>
           <span className="text-xs text-green-700 font-medium">Confirmed</span>
-          
-          {/* Line to Picked Up */}
-          <div className={`h-px flex-1 ${isPickedUp ? 'bg-green-500' : 'bg-green-300'}`} />
-          
-          {/* Picked Up */}
-          <div className={`h-3 w-3 rounded-full flex items-center justify-center ${isPickedUp ? 'bg-green-500' : 'bg-green-300'}`}>
-            {isPickedUp && <CheckCircle2 className="h-2 w-2 text-white" />}
-          </div>
-          <span className={`text-xs ${isPickedUp ? 'text-green-700 font-medium' : 'text-green-600'}`}>
-            Picked Up {isPickedUp && '(by NGO)'}
-          </span>
           
           {/* Line to Complete */}
           <div className={`h-px flex-1 ${isCompleted ? 'bg-green-500' : 'bg-green-300'}`} />
@@ -324,28 +283,11 @@ const NGORequestsPage = () => {
                                   Open Chat
                                 </Button>
                                 
-                                {/* NGO can mark as picked up when status is confirmed */}
-                                {listing.status === 'confirmed' && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleMarkPickedUp(listing)}
-                                    disabled={isMarkingPickup === listing.id}
-                                    className="bg-blue-600 hover:bg-blue-700"
-                                  >
-                                    {isMarkingPickup === listing.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Truck className="h-4 w-4" />
-                                    )}
-                                    Mark as Picked Up
-                                  </Button>
-                                )}
-                                
-                                {/* Show waiting message when picked up but not completed */}
-                                {listing.status === 'picked_up' && (
+                                {/* Show waiting message for confirmed status */}
+                                {(listing.status === 'confirmed' || listing.status === 'picked_up') && (
                                   <div className="flex items-center gap-2 text-sm text-amber-600 bg-amber-50 px-3 py-1.5 rounded-md">
                                     <Clock className="h-4 w-4" />
-                                    Waiting for donor to confirm completion
+                                    Waiting for donor to mark as completed
                                   </div>
                                 )}
                                 

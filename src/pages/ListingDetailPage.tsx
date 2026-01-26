@@ -14,7 +14,7 @@ import { useRequests, DonationRequest } from '@/hooks/useRequests';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
-import {
+import { 
   ArrowLeft,
   MapPin,
   Clock,
@@ -64,15 +64,15 @@ const ListingDetailPage = () => {
       setIsLoading(true);
       const listingData = await getListingById(id);
       setListing(listingData);
-
+      
       if (listingData) {
         const requestsData = await getRequestsByListing(id);
         setRequests(requestsData);
       }
-
+      
       setIsLoading(false);
     };
-
+    
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -167,22 +167,7 @@ const ListingDetailPage = () => {
     }
   };
 
-  const handleMarkPickedUp = async () => {
-    try {
-      await updateListingStatus({ listingId: listing.id, status: 'picked_up' });
-      setListing(prev => prev ? { ...prev, status: 'picked_up' } : null);
-      toast({
-        title: 'Marked as Picked Up! 🚗',
-        description: 'The NGO has picked up the donation.',
-      });
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to mark as picked up.',
-        variant: 'destructive',
-      });
-    }
-  };
+  // Removed handleMarkPickedUp - now using single-step donor-only completion flow
 
   const handleMarkCompleted = async () => {
     try {
@@ -192,7 +177,7 @@ const ListingDetailPage = () => {
         title: 'Donation Completed! 🎉',
         description: 'Thank you for making a difference!',
       });
-
+      
       // Open feedback dialog for the NGO
       if (acceptedRequest) {
         setSelectedFeedback({
@@ -223,8 +208,8 @@ const ListingDetailPage = () => {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Button
-          variant="ghost"
+        <Button 
+          variant="ghost" 
           className="mb-6"
           onClick={() => navigate(-1)}
         >
@@ -237,8 +222,8 @@ const ListingDetailPage = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Image & Status */}
             <div className="relative rounded-2xl overflow-hidden">
-              <img
-                src={listing.photos?.[0] || 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800'}
+              <img 
+                src={listing.photos?.[0] || 'https://images.unsplash.com/photo-1547592180-85f173990554?w=800'} 
                 alt={listing.food_category}
                 className="w-full h-64 md:h-80 object-cover"
               />
@@ -326,30 +311,16 @@ const ListingDetailPage = () => {
                   />
                 )}
 
-                {/* Info for confirmed status - NGO should mark as picked up */}
-                {isDonor && listing.status === 'confirmed' && (
-                  <div className="space-y-3 pt-4 border-t">
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => navigate(`/chat/${listing.id}`)}
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      Chat with NGO
-                    </Button>
-                  </div>
-                )}
-
-                {/* Action buttons for picked_up status - Donor confirms completion */}
-                {isDonor && listing.status === 'picked_up' && (
+                {/* Action buttons for confirmed or picked_up status - Donor can mark as completed */}
+                {isDonor && (listing.status === 'confirmed' || listing.status === 'picked_up') && (
                   <div className="space-y-3 pt-4 border-t">
                     <div className="flex gap-3">
                       <Button onClick={handleMarkCompleted} className="flex-1">
                         <CheckCircle2 className="h-4 w-4" />
-                        Confirm Completion
+                        Mark as Completed
                       </Button>
-                      <Button
-                        variant="outline"
+                      <Button 
+                        variant="outline" 
                         onClick={() => navigate(`/chat/${listing.id}`)}
                       >
                         <MessageSquare className="h-4 w-4" />
@@ -362,8 +333,8 @@ const ListingDetailPage = () => {
                 {/* Feedback button for completed listings */}
                 {isDonor && listing.status === 'completed' && acceptedRequest && (
                   <div className="flex gap-3 pt-4 border-t">
-                    <Button
-                      variant="outline"
+                    <Button 
+                      variant="outline" 
                       className="flex-1"
                       onClick={() => {
                         setSelectedFeedback({
@@ -377,7 +348,7 @@ const ListingDetailPage = () => {
                       <Star className="h-4 w-4" />
                       Give Feedback
                     </Button>
-                    <Button
+                    <Button 
                       variant="ghost"
                       className="text-amber-600 hover:text-amber-700"
                       onClick={() => handleReportIssue(
@@ -415,7 +386,7 @@ const ListingDetailPage = () => {
                           <span className="font-medium">{request.ngo_profile?.org_name || 'Unknown NGO'}</span>
                           <Badge variant={
                             request.status === 'accepted' ? 'default' :
-                              request.status === 'rejected' ? 'destructive' : 'secondary'
+                            request.status === 'rejected' ? 'destructive' : 'secondary'
                           }>
                             {request.status}
                           </Badge>
@@ -443,16 +414,16 @@ const ListingDetailPage = () => {
 
                         {request.status === 'pending' && (
                           <div className="flex gap-2">
-                            <Button
-                              size="sm"
+                            <Button 
+                              size="sm" 
                               className="flex-1"
                               onClick={() => handleAcceptRequest(request.id)}
                             >
                               <CheckCircle2 className="h-3 w-3" />
                               Accept
                             </Button>
-                            <Button
-                              size="sm"
+                            <Button 
+                              size="sm" 
                               variant="outline"
                               onClick={() => handleRejectRequest(request.id)}
                             >
@@ -465,8 +436,8 @@ const ListingDetailPage = () => {
                         {/* Reconsideration flow - allow accepting previously rejected requests */}
                         {request.status === 'rejected' && listing.status !== 'confirmed' && listing.status !== 'completed' && (
                           <div className="mt-3 pt-3 border-t">
-                            <Button
-                              size="sm"
+                            <Button 
+                              size="sm" 
                               variant="outline"
                               className="w-full border-green-300 text-green-700 hover:bg-green-50"
                               onClick={() => handleAcceptRequest(request.id)}
@@ -505,8 +476,8 @@ const ListingDetailPage = () => {
                       </p>
                     )}
                   </div>
-                  <Button
-                    className="w-full"
+                  <Button 
+                    className="w-full" 
                     onClick={() => navigate(`/chat/${listing.id}`)}
                   >
                     <MessageSquare className="h-4 w-4" />
@@ -514,7 +485,7 @@ const ListingDetailPage = () => {
                   </Button>
                   {listing.status === 'completed' && (
                     <>
-                      <Button
+                      <Button 
                         variant="outline"
                         className="w-full"
                         onClick={() => {
@@ -529,7 +500,7 @@ const ListingDetailPage = () => {
                         <Star className="h-4 w-4" />
                         Give Feedback
                       </Button>
-                      <Button
+                      <Button 
                         variant="ghost"
                         className="w-full text-amber-600 hover:text-amber-700"
                         onClick={() => handleReportIssue(
